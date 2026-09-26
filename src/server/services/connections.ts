@@ -23,13 +23,12 @@ export function reconcileAccounts(state: RepositoryState, itemId: string, accoun
       enabled: selectedIds ? selectedIds.includes(source.account_id) : false, itemId, plaidAccountId: source.account_id, createdAt: new Date().toISOString() });
   }
 }
-// Consented products may not be initialized yet. Never infer consent from
-// available_products alone; that field only describes provider capabilities.
-export function supportedProducts(item: Item, requested: readonly BankingProduct[]): BankingProduct[] {
+// Explicit consent permits attempting the product endpoint, which initializes
+// products added after Link. Product availability is not proof of consent, and
+// an absent entry must not override consent already granted by the user.
+export function authorizedProducts(item: Item, requested: readonly BankingProduct[]): BankingProduct[] {
   const consented = new Set<string>(item.consented_products ?? requested);
-  const supported = [...(item.products || []), ...(item.billed_products || []), ...(item.available_products || [])];
-  const hasCapabilities = item.products !== undefined || item.billed_products !== undefined || item.available_products !== undefined;
-  return bankingProducts.filter((product) => consented.has(product) && (!hasCapabilities || supported.includes(product as Products)));
+  return bankingProducts.filter((product) => consented.has(product));
 }
 
 function duplicateConnection(state: RepositoryState, input: LinkCompletion) {
@@ -85,8 +84,8 @@ export class Connections {
       const { item } = await this.plaid.item(state.vault.tokens[connectionId]);
       // Update mode rejects unsupported products (for example Investments on Amex).
       // Capabilities permit requesting consent; they do not grant access themselves.
-      const capabilities = new Set([...(item.products || []), ...(item.billed_products || []), ...(item.available_products || [])]);
-      const hasCapabilities = item.products !== undefined || item.billed_products !== undefined || item.available_products !== undefined;
+      const capabilities = new Set([...(item.products || []), ...(item.billed_products || []), ...(item.available_products || []), ...(item.consented_products || [])]);
+      const hasCapabilities = item.products !== undefined || item.billed_products !== undefined || item.available_products !== undefined || item.consented_products !== undefined;
       requestedProducts = bankingProducts.filter(product => hasCapabilities ? capabilities.has(product as Products) : state.connections[connectionId].products.includes(product));
     }
     const result = await this.plaid.createLink({ client_name: 'Respect Money', language: 'en', country_codes: [CountryCode.Us],
@@ -148,7 +147,7 @@ export class Connections {
       }
       const connection = draft.connections[itemId];
       if (!connection.products.includes('transactions') && requestedProducts.includes('transactions')) connection.requestedHistoryDays ??= 730;
-      connection.products = supportedProducts(result.item, requestedProducts);
+      connection.products = authorizedProducts(result.item, requestedProducts);
       if (result.item.institution_id) connection.institutionId = result.item.institution_id;
       connection.status = 'connected'; delete connection.lastError;
       delete draft.vault.links[input.sessionId];

@@ -6,7 +6,7 @@ import { AppError, hash } from '../domain/ledger.js';
 import { PlaidFailure, safeError, type PlaidGateway } from '../integrations/plaid/client.js';
 import type { Job, Repository } from '../storage/repository.js';
 import { syncTransactions } from './transactions-sync.js';
-import { reconcileAccounts, supportedProducts } from './connections.js';
+import { reconcileAccounts, authorizedProducts } from './connections.js';
 import { syncInvestments } from './investments-sync.js';
 import { historyFloor } from '../domain/coverage.js';
 
@@ -73,7 +73,7 @@ export class Jobs {
           const token = state.vault.tokens[itemId];
           const accounts = await this.plaid.accounts(token);
           if (accounts.item.item_id !== itemId) throw new AppError(t('The bank returned an account that does not match this connection.'), 502);
-          const products = supportedProducts(accounts.item, connection.products);
+          const products = authorizedProducts(accounts.item, connection.products);
           await this.repository.change((draft) => { reconcileAccounts(draft, itemId, accounts.accounts); draft.connections[itemId].products = products; }, false);
           const requested = this.repository.snapshot().accounts.filter((account) => account.itemId === itemId && job.accountIds.includes(account.id));
           const failures: unknown[] = [];

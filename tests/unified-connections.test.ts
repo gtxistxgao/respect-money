@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { expect, it, vi } from 'vitest';
 import { PlaidApi, Products, type Item } from 'plaid';
 import { Repository } from '../src/server/storage/repository.js';
-import { Connections, supportedProducts } from '../src/server/services/connections.js';
+import { Connections, authorizedProducts } from '../src/server/services/connections.js';
 import { Jobs } from '../src/server/services/jobs.js';
 import { WealthService } from '../src/server/services/wealth.js';
 import { readConfig } from '../src/server/config.js';
@@ -88,6 +88,54 @@ it('adds investments to an existing bank connection without replacing IDs or loc
   } finally { await f.close(); }
 });
 
+it('imports explicitly consented investments absent from all availability lists and repairs a previously filtered connection', async () => {
+  const f = await fixture();
+  try {
+    f.item.available_products = [Products.Balance];
+    await f.complete();
+    expect(f.repository.snapshot().connections['mixed-item'].products).toEqual(['transactions', 'investments']);
+    const create = vi.spyOn(f.plaid, 'createLink');
+    await f.connections.createLink('mixed-item');
+    expect(create.mock.calls[0][0].additional_consented_products).toEqual(['transactions', 'investments']);
+    await f.repository.change(state => { state.connections['mixed-item'].products = ['transactions']; }, false);
+    const wealth = new WealthService(f.repository, f.plaid);
+    wealth.refresh(); await wealth.close();
+    expect(f.plaid.holdings).toHaveBeenCalledOnce();
+    expect(wealth.summary().errors).toEqual([]);
+    expect(f.repository.snapshot().connections['mixed-item'].products).toEqual(['transactions', 'investments']);
+    await f.repository.change(state => {
+      Object.assign(state.connections['mixed-item'], { products: ['transactions'], status: 'error', lastError: 'Previous access warning' });
+    }, false);
+    const jobs = new Jobs(f.repository, f.plaid, { attempts: 1, delayMs: 0 });
+    const job = await jobs.enqueue({ type: 'sync', range: { start: '2026-08-01', end: '2026-08-31' } });
+    await jobs.idle();
+    const state = f.repository.snapshot();
+    expect(state.jobs[job.id]).toMatchObject({ status: 'succeeded', errors: [] });
+    expect(state.connections['mixed-item']).toMatchObject({ products: ['transactions', 'investments'], status: 'connected' });
+    expect(state.connections['mixed-item'].lastError).toBeUndefined();
+    expect(f.plaid.sync).toHaveBeenCalledOnce();
+    expect(f.plaid.investments).toHaveBeenCalledOnce();
+    expect(state.processed.some(row => row.description === 'Fictional cash dividend')).toBe(true);
+  } finally { await f.close(); }
+});
+
+it.each(['PRODUCT_NOT_READY', 'PRODUCT_NOT_SUPPORTED'])('reports the actual %s response for consented investments without claiming consent is missing', async code => {
+  const f = await fixture();
+  try {
+    f.item.available_products = [Products.Balance];
+    await f.complete();
+    f.plaid.investments.mockRejectedValue(new PlaidFailure(code));
+    const jobs = new Jobs(f.repository, f.plaid, { attempts: 1, delayMs: 0 });
+    const job = await jobs.enqueue({ type: 'sync', range: { start: '2026-08-01', end: '2026-08-31' } });
+    await jobs.idle();
+    const result = f.repository.snapshot().jobs[job.id];
+    expect(result.status).toBe('partial_failed');
+    expect(f.plaid.investments).toHaveBeenCalledOnce();
+    expect(JSON.stringify(result.errors)).toContain(new PlaidFailure(code).message);
+    expect(JSON.stringify(result.errors)).not.toContain('Manage accounts');
+  } finally { await f.close(); }
+});
+
 it.each(['sync', 'investments'] as const)('still publishes the other account type when %s fails on the same connection', async (failed) => {
   const f = await fixture();
   try {
@@ -102,9 +150,9 @@ it.each(['sync', 'investments'] as const)('still publishes the other account typ
   } finally { await f.close(); }
 });
 
-it('checks consent and support separately, and does not call holdings for bank-only accounts', async () => {
-  expect(supportedProducts({ consented_products: [Products.Transactions], available_products: [Products.Transactions, Products.Investments] } as Item, ['transactions', 'investments'])).toEqual(['transactions']);
-  expect(supportedProducts({ consented_products: [Products.Transactions, Products.Investments], available_products: [Products.Transactions] } as Item, ['transactions', 'investments'])).toEqual(['transactions']);
+it('honors explicit consent without inferring it from availability, and skips holdings for bank-only accounts', async () => {
+  expect(authorizedProducts({ consented_products: [Products.Transactions], available_products: [Products.Transactions, Products.Investments] } as Item, ['transactions', 'investments'])).toEqual(['transactions']);
+  expect(authorizedProducts({ consented_products: [Products.Transactions, Products.Investments], available_products: [Products.Transactions] } as Item, ['transactions', 'investments'])).toEqual(['transactions', 'investments']);
   const f = await fixture();
   try {
     f.setAccounts([f.bank]); await f.complete();

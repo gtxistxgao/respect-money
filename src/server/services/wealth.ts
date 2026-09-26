@@ -6,7 +6,7 @@ import { AppError } from '../domain/ledger.js';
 import { accountBalance, wealthSummary } from '../domain/wealth.js';
 import { safeError, type PlaidGateway } from '../integrations/plaid/client.js';
 import type { Repository } from '../storage/repository.js';
-import { reconcileAccounts } from './connections.js';
+import { reconcileAccounts, authorizedProducts } from './connections.js';
 
 export class WealthService {
   private pending?: Promise<void>;
@@ -45,8 +45,9 @@ export class WealthService {
         if (!token) throw new AppError(t('Connection not found.'), 404);
         const response = await this.plaid.accounts(token);
         if (response.item.item_id !== connection.id) throw new AppError(t('The bank returned an account that does not match this connection.'), 502);
+        const products = authorizedProducts(response.item, connection.products);
         let holdings: InvestmentsHoldingsGetResponse | undefined;
-        if (connection.products.includes('investments') && response.accounts.some((account) => account.type === 'investment' || account.type === 'brokerage')) {
+        if (products.includes('investments') && response.accounts.some((account) => account.type === 'investment' || account.type === 'brokerage')) {
           try {
             holdings = await this.plaid.holdings(token);
             if (holdings.item.item_id !== connection.id) throw new AppError(t('The bank returned an account that does not match this connection.'), 502);
@@ -58,6 +59,7 @@ export class WealthService {
         const fetchedAt = new Date().toISOString();
         const freshIds = await this.repository.change((state) => {
           if (!state.connections[connection.id] || state.vault.tokens[connection.id] !== token || state.connections[connection.id].createdAt !== connection.createdAt) return;
+          state.connections[connection.id].products = products;
           reconcileAccounts(state, connection.id, response.accounts);
           const wealth = state.wealth ||= emptyWealth();
           for (const account of state.accounts.filter((account) => account.itemId === connection.id)) {
