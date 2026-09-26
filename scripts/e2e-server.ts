@@ -1,0 +1,11 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { buildApp } from '../src/server/app.js';
+import { readConfig } from '../src/server/config.js';
+import { integrationPlaid, integrationClassifier, integrationPatternMatcher } from '../tests/fixtures/integration.js';
+const dataDir = await mkdtemp(join(tmpdir(), 'respect-money-browser-'));
+const app = await buildApp({ ...readConfig(dataDir), dataDir, port: 3101, plaidEnv: 'sandbox', plaidClientId: 'fixture', plaidSecret: 'fixture' }, { models: async () => [{ model: 'fixture-model', displayName: 'Fixture Model', isDefault: true }], plaid: integrationPlaid(), classifyBatch: integrationClassifier, matchPatterns: integrationPatternMatcher, polling: { attempts: 1, delayMs: 0 } });
+await app.listen({ host: '127.0.0.1', port: 3101 });
+console.log('Isolated browser test server: http://127.0.0.1:3101');
+for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, async () => { await app.close(); await rm(dataDir, { recursive: true, force: true }); process.exit(0); });

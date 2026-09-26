@@ -1,0 +1,37 @@
+# Personal financial records, local metadata, and future receipts.
+/data/
+
+# Local credentials. Only placeholder examples may be committed.
+.env
+.env.*
+!.env.example
+
+.DS_Store
+/node_modules/
+/dist/
+/coverage/
+/playwright-report/
+/test-results/
+*.tsbuildinfo
+
+# Private database copies and rollback/WAL files outside data/.
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+/backups/
+/receipts/
+
+# Private keys, local logs, and editor state.
+*.pem
+*.key
+*.p12
+*.pfx
+*.log
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
