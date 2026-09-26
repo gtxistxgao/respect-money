@@ -1,30 +1,109 @@
+<p align="center">
+  <img src="docs/assets/favicon.svg" alt="Respect Money logo" width="80" height="80">
+</p>
+
 # Respect Money
 
-A personal finance app that runs on your computer: a React interface, optional Plaid bank synchronization, and optional Codex transaction classification. Transactions, settings, and balance history are stored in a local SQLite database.
+**Your money. Your machine. Less busywork.**
 
-Manual bookkeeping works without Plaid or Codex. The app supports English and Simplified Chinese. It is designed for one local user, with no public login or multi-user isolation.
+A free, local alternative to apps like Rocket Money, built around your own ledger. Bring your bank accounts together, make sense of your spending, and track your wealth—without a Respect Money subscription or a hosted Respect Money account.
 
-## Quick start
+Connect your accounts, sync your transactions, and let AI handle the first pass at categorization. When something looks wrong, describe the pattern and correct matching transactions in a batch. Spend your time understanding your finances instead of relabeling rows.
 
-Install Node.js 24 or later (`node:sqlite` is required). The development and CI version is Node.js 26, recorded in `.node-version`.
+[Get started](#get-started) · [What it does](#what-it-does) · [Privacy](SECURITY.md) · [Documentation](#documentation-and-project-page)
+
+## Why Respect Money?
+
+- **Free software, no app subscription.** Run the app on your own computer. Bring your own Plaid and Codex access; their eligibility, usage limits, and any service charges are separate.
+- **Your ledger stays on your machine.** The web app and backend run locally. Transactions, categories, notes, settings, and wealth history live in your SQLite database, with backups you control. There is no Respect Money cloud storing your ledger.
+- **AI sorting, with you in control.** Codex helps classify transaction categories and infer countries from the available clues. If it gets a recurring payment wrong, give it an example, preview similar transactions, and apply your correction together. Work through thousands of eligible records in batches instead of editing them one by one. Saved rules run when you explicitly scan; they do not silently change future transactions.
+- **A practical free bank-sync option.** Eligible Plaid Trial accounts can create up to **10 Production Items** for real bank connections—room for a personal setup with checking, savings, credit cards, and investments, depending on your logins and institution support. See the [Plaid Trial details](https://support.plaid.com/hc/en-us/articles/39994173227159-What-is-the-Plaid-Trial-plan).
+
+**Local app, clear data boundaries:** Plaid connects to your banks. When you enable AI classification or a reclassification scan, selected transaction details and any supplied rule examples are sent through your local Codex CLI to its model service. AI processing is not fully offline. Use manual bookkeeping without either integration if you want to keep those records entirely local. See [Security and privacy](SECURITY.md).
+
+The interface supports **English and Simplified Chinese**. Accounting focuses on posted USD transactions; Wealth combines USD account balances and manual assets. The app is designed for one local user.
+
+## Get started
+
+### 1. Create your Plaid account
+
+[Sign up for Plaid](https://dashboard.plaid.com/signup) and check your eligibility for its free **Trial plan**. Trial supports real bank data, including Transactions and Investments. It is available to eligible developers in the US and Canada who do not already have Production or Limited Production access. Older accounts may have different free-access terms. [Plaid's free-access guide](https://support.plaid.com/hc/en-us/articles/16194695660311-Can-I-use-Plaid-for-free) explains the difference.
+
+The limit is **10 Items, not necessarily 10 institutions or 10 individual accounts**. One Item represents one login at one institution and can include several accounts—for example, checking and savings under the same login. Separate logins or duplicate connections can consume more Items. See [Plaid's Item definition](https://plaid.com/docs/quickstart/glossary/#item).
+
+Deleting an Item **does not restore a Trial slot**, so reuse existing connections when managing accounts. Confirm the current limits and institution access in your Dashboard before connecting. [Trial plan limits](https://support.plaid.com/hc/en-us/articles/39994173227159-What-is-the-Plaid-Trial-plan)
+
+To try manual bookkeeping first, skip Plaid setup and create a manual account in the app.
+
+### 2. Run the app on your computer
+
+Install **Node.js 24 or later**; development and CI use Node.js 26, recorded in `.node-version`. Clone the project and start the built app:
 
 ```sh
 git clone https://github.com/gtxistxgao/respect-money.git
 cd respect-money
 npm ci
-npm run dev
-```
-
-Open [the local app](http://127.0.0.1:5173). Use **Settings → Language** to select English; a new browser defaults to Simplified Chinese. The choice persists in that browser and synchronizes between tabs. Create a manual account in Settings, then add a transaction in Accounting.
-
-For a built application served from a single port:
-
-```sh
 npm run build
 npm start
 ```
 
-Open [the built app](http://127.0.0.1:3001). Run commands from the repository root. Stop the app with `Ctrl+C`, and run only one backend per data directory. Both startup modes listen on loopback.
+Open **[http://127.0.0.1:3001](http://127.0.0.1:3001)** in your browser. This is the app running on your own computer. Keep commands in the repository root and run only one backend per data directory.
+
+For background use on macOS or Linux, install `tmux`, stop the foreground app with `Ctrl+C`, and start it from the same directory:
+
+```sh
+tmux new-session -d -s respect-money 'npm start'
+```
+
+You can close that terminal and keep using the local page. To return to the app's console:
+
+```sh
+tmux attach-session -t respect-money
+```
+
+Detach with `Ctrl+B`, then `D`; stop the app with `Ctrl+C` while attached. `tmux` keeps the terminal session alive, but does not keep a sleeping computer running or restart the app after a reboot.
+
+For development with live reload, use `npm run dev` instead and open [http://127.0.0.1:5173](http://127.0.0.1:5173). Both modes listen on loopback; this is not a public hosting setup.
+
+### 3. Configure Plaid and Codex in Settings
+
+Open **Settings → Language** to select English if needed; a new browser defaults to Simplified Chinese. Your choice persists in that browser and synchronizes between tabs.
+
+In **Settings → Bank connections**, enter your **Plaid client ID** and **secret** and select the matching environment. Choose **Production** for real accounts, including the Trial plan; Sandbox uses fictional test accounts. Save your settings. The app stores them in your local database, so you do not need an `.env` file.
+
+For AI features, install and sign in to the **Codex CLI** on the same computer. Follow the [official Codex CLI setup](https://learn.chatgpt.com/docs/codex/cli); you can install it with npm and sign in from your terminal:
+
+```sh
+npm install -g @openai/codex
+codex login
+codex --version
+```
+
+Then open **Settings → Automatic classification**, select an available model, and save. You can edit the classification prompt, choose a model ID manually, or leave it blank for the CLI default. If the executable is not found, set its path under **Advanced settings**. Your Codex account's model access and usage limits apply.
+
+The current release requires a working, signed-in Codex CLI for AI classification and reclassification. **On the roadmap:** test open-source models, including local inference, with the aim of reducing that dependency and making fully local classification possible. This is planned work, not a feature of the current release.
+
+### 4. Connect your bank accounts
+
+In Settings, select **Connect accounts**, choose your institution in Plaid Link, and authorize the accounts you want to use. Respect Money does not receive your bank password. Checking, credit, and investment accounts are identified automatically from the returned account types.
+
+Use **Manage accounts** on an existing connection to add accounts or update consent, and **Reauthorize** when the bank needs you to sign in again. Institution access depends on your Plaid account; see [connection details](#connect-a-bank) for OAuth and redirect setup if required.
+
+### 5. Sync your transactions and let AI sort them
+
+Open **Accounting → Sync bank data**. Choose a month, year, or custom date range and start synchronization. The first connection also starts an initial sync from **2026-01-01 through today**; you can request earlier history afterward if the provider has it.
+
+The backend fetches the available bank and investment transactions from Plaid, then uses Codex to classify new or uncached transactions and suggest the country where each transaction took place. Countries without reliable evidence default to US and can be corrected. Progress is visible in the app; closing the browser does not stop a running job while the backend stays up.
+
+Sync is initiated by you; this is not an always-on scheduled bank poller. Normal sync reads what Plaid currently has. The optional bank-refresh setting requests a newer upstream update where supported. Available history and freshness depend on the provider.
+
+**Correct recurring mistakes in one batch.** Open **Settings → Reclassify**, enter an example or pattern, choose the correct category and cash flow direction, and scan. Review the matches, deselect anything that does not belong, and apply your correction to the selected transactions. For example, teach the app that a recurring rent payment belongs in Housing, then fix its matches together. You can also explicitly rerun classification over a date range. Your manual decisions remain protected during ordinary synchronization and automatic classification.
+
+### 6. Explore your ledger and wealth
+
+Use **Overview** to compare income and spending by month, **Accounting** to inspect transactions and categories, and **Wealth** to see account balances, assets, debts, and net worth. Add property, vehicles, or other manual assets to build a fuller picture. **Update balances** saves a local daily snapshot so you can follow changes over time.
+
+Everything you review and save stays in your local ledger. Back it up regularly using the [backup and restore commands](#local-storage-migration-and-backups); Git does not back up your financial records.
 
 ## What it does
 
@@ -116,7 +195,7 @@ Stop the application before migration, backup, or restore:
 
 ```sh
 npm run backup
-npm run restore -- data/backups/<backup-directory>
+npm run restore -- "data/backups/<backup-directory>"
 ```
 
 Backup creates a verified SQLite snapshot and checksum manifest. Copy the entire backup directory to private backup storage. Restore verifies it, backs up a valid existing ledger, and replaces state transactionally. Legacy JSON backups are supported. Git commits do not back up your finances.
