@@ -1,4 +1,4 @@
-// This page is a standalone illustration. It never calls the ledger API.
+// This page is a static screenshot gallery. It never calls the ledger API.
 const pageDocument = globalThis.document;
 const tabs = [...pageDocument.querySelectorAll('[data-preview]')];
 
@@ -8,9 +8,6 @@ function selectPreview(tab) {
     item.setAttribute('aria-selected', String(selected));
     item.tabIndex = selected ? 0 : -1;
     pageDocument.getElementById(item.getAttribute('aria-controls')).hidden = !selected;
-  }
-  for (const item of pageDocument.querySelectorAll('[data-sidebar]')) {
-    item.classList.toggle('selected', item.dataset.sidebar === tab.dataset.preview);
   }
 }
 

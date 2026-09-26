@@ -39,57 +39,45 @@
       <div class="hero-actions"><a class="button primary" href="https://github.com/gtxistxgao/respect-money"><svg><use href="#i-github"/></svg>Explore on GitHub</a><a class="button secondary" href="#get-started">Run it locally</a></div>
       <p class="hero-note">No Respect Money subscription. Your ledger stays on your computer.<br>Plaid and AI are optional online services with their own terms.</p>
     </section>
-    <!-- Product illustration: fictional data only, no connection to the application. -->
-    <section class="preview-section wrap" aria-label="Interactive product illustration">
+    <!-- Real application captures from an isolated database with fictional data. -->
+    <section class="preview-section wrap" aria-label="Application screenshots">
       <div class="preview-tabs" role="tablist" aria-label="Explore the features">
         <button id="tab-overview" type="button" role="tab" aria-selected="true" aria-controls="panel-overview" data-preview="overview"><svg><use href="#i-chart"/></svg>Monthly overview</button>
         <button id="tab-ledger" type="button" role="tab" aria-selected="false" aria-controls="panel-ledger" tabindex="-1" data-preview="ledger"><svg><use href="#i-list"/></svg>Transaction ledger</button>
+        <button id="tab-wealth" type="button" role="tab" aria-selected="false" aria-controls="panel-wealth" tabindex="-1" data-preview="wealth"><svg><use href="#i-wallet"/></svg>Wealth</button>
         <button id="tab-rules" type="button" role="tab" aria-selected="false" aria-controls="panel-rules" tabindex="-1" data-preview="rules"><svg><use href="#i-spark"/></svg>Reclassification</button>
       </div>
       <div class="product-window">
-        <div class="window-bar"><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Respect Money</span><span class="local-indicator"><i></i>Local ledger</span></div>
-        <div class="product-body">
-          <aside class="product-sidebar" aria-hidden="true">
-            <span class="product-brand"><svg><use href="#i-wallet"/></svg>respect money.</span>
-            <span class="sidebar-item selected" data-sidebar="overview"><svg><use href="#i-chart"/></svg>Overview</span>
-            <span class="sidebar-item" data-sidebar="ledger"><svg><use href="#i-list"/></svg>Accounting</span>
-            <span class="sidebar-item" data-sidebar="rules"><svg><use href="#i-spark"/></svg>Reclassify</span>
-            <div class="sidebar-bottom"><span class="avatar">S</span><span>Sample workspace<small>Saved on this computer</small></span></div>
-          </aside>
-          <div class="product-content">
-            <div class="preview-panel" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" tabindex="0">
-              <div class="panel-heading"><div><span class="product-breadcrumb">Your finances / Overview</span><h2>A clearer view of your month.</h2></div><span class="mock-select">September 2026 <span aria-hidden="true">⌄</span></span></div>
-              <div class="metrics"><div><span>Income</span><strong class="income">$6,400<span>.00</span></strong><small>Money coming in</small></div><div><span>Spending</span><strong class="expense">$3,280<span>.00</span></strong><small>Where your money went</small></div><div><span>Left this month</span><strong>$3,120<span>.00</span></strong><small>Income minus spending</small></div></div>
-              <div class="overview-grid">
-                <div class="chart-panel"><div class="chart-title"><h3>Cash flow</h3><span><i class="income-dot"></i>Income <i class="expense-dot"></i>Spending</span></div>
-                  <div class="bar-chart" role="img" aria-label="Illustrative monthly income and spending from April to September. September income is 6,400 dollars and spending is 3,280 dollars.">
-                    <div class="chart-guides" aria-hidden="true"><span>$8k</span><span>$4k</span><span>$0</span></div>
-                    <div class="bars" aria-hidden="true"><div><i style="--height:72%"></i><b style="--height:51%"></b><span>Apr</span></div><div><i style="--height:78%"></i><b style="--height:43%"></b><span>May</span></div><div><i style="--height:73%"></i><b style="--height:59%"></b><span>Jun</span></div><div><i style="--height:82%"></i><b style="--height:50%"></b><span>Jul</span></div><div><i style="--height:76%"></i><b style="--height:45%"></b><span>Aug</span></div><div class="current-month"><i style="--height:80%"></i><b style="--height:41%"></b><span>Sep</span></div></div>
-                  </div>
-                </div>
-                <div class="categories"><h3>Spending by category</h3><div><span>Housing<b>$1,760</b></span><i style="--share:54%;--bar:#9b9cf2"></i></div><div><span>Groceries<b>$620</b></span><i style="--share:19%;--bar:#8bc4b0"></i></div><div><span>Dining<b>$380</b></span><i style="--share:12%;--bar:#dfb579"></i></div><div><span>Travel<b>$280</b></span><i style="--share:9%;--bar:#8eb5df"></i></div><div><span>Other<b>$240</b></span><i style="--share:7%;--bar:#8c98ad"></i></div></div>
-              </div>
-              <div class="product-footnote"><svg><use href="#i-check"/></svg>Transfers and credit card repayments stay out of your spending totals.</div>
-            </div>
-            <div class="preview-panel" id="panel-ledger" role="tabpanel" aria-labelledby="tab-ledger" tabindex="0" hidden>
-              <div class="panel-heading"><div><span class="product-breadcrumb">Your finances / Accounting</span><h2>Every entry, in its place.</h2></div><span class="mock-select">September 2026 <span aria-hidden="true">⌄</span></span></div>
-              <div class="ledger-summary"><span><i class="income-dot"></i>Income <b>$6,400.00</b></span><span><i class="expense-dot"></i>Spending <b>$3,280.00</b></span><span class="sample-label">Sample transactions</span></div>
-              <div class="table-scroll"><table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th class="amount">Amount</th></tr></thead><tbody><tr><td>Sep 01</td><td>Monthly payroll<small>Checking account</small></td><td><span class="tag salary">Salary</span></td><td class="amount income">+$6,400.00</td></tr><tr><td>Sep 02</td><td>Apartment rent<small>Checking account</small></td><td><span class="tag">Housing</span></td><td class="amount">−$1,760.00</td></tr><tr><td>Sep 06</td><td>Neighborhood market<small>Everyday card</small></td><td><span class="tag groceries">Groceries</span></td><td class="amount">−$82.40</td></tr><tr><td>Sep 08</td><td>Corner coffee<small>Everyday card</small></td><td><span class="tag dining">Dining</span></td><td class="amount">−$6.50</td></tr><tr><td>Sep 10</td><td>Weekend train<small>Everyday card</small></td><td><span class="tag travel">Travel</span></td><td class="amount">−$48.00</td></tr></tbody></table></div>
-              <div class="product-footnote"><svg><use href="#i-split"/></svg>Filter, add notes, split a purchase, or adjust a category.</div>
-            </div>
-            <div class="preview-panel" id="panel-rules" role="tabpanel" aria-labelledby="tab-rules" tabindex="0" hidden>
-              <div class="panel-heading"><div><span class="product-breadcrumb">Settings / Reclassify</span><h2>Your examples. Your categories.</h2></div><span class="sample-label">Example rule</span></div>
-              <div class="rule-illustration"><div><span>Transaction example or pattern</span><p>Send to Alex Morgan, about $500.<br>Ignore changing reference IDs.</p></div><div><span>Target category</span><p><span class="tag">Housing</span></p></div></div>
-              <div class="match-heading"><h3>Similar transactions</h3><span>Review before applying</span></div>
-              <div class="match-row"><span class="mock-check"><svg><use href="#i-check"/></svg></span><div><strong>Send to Alex Morgan REF A12345</strong><span>Same recipient, matching amount</span></div><b>−$500.00</b><span class="tag">Housing</span></div>
-              <div class="match-row"><span class="mock-check"><svg><use href="#i-check"/></svg></span><div><strong>SEND TO ALEX MORGAN REF B98765</strong><span>Different reference, same pattern</span></div><b>−$525.00</b><span class="tag">Housing</span></div>
-              <div class="rule-footer"><span>2 matching transactions</span><span class="mock-apply">Review → Apply category</span></div>
-              <div class="product-footnote"><svg><use href="#i-check"/></svg>Your chosen categories are preserved during future bank syncs.</div>
-            </div>
-          </div>
+        <div class="preview-panel" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" tabindex="0">
+          <picture>
+            <source media="(max-width: 640px)" srcset="./assets/screenshots/overview-mobile.png" width="390" height="1923">
+            <img class="preview-screenshot" src="./assets/screenshots/overview-desktop.png" width="1440" height="1345" alt="Overview: monthly trends, cash flow, and spending categories." decoding="async">
+          </picture>
+          <div class="preview-detail"><p>Income and spending trends, monthly cash flow, and category shares in Overview.</p><a href="./assets/screenshots/overview-desktop.png" target="_blank" rel="noopener">Open full-size screenshot<span class="sr-only">: Monthly overview (new tab)</span> ↗</a></div>
+        </div>
+        <div class="preview-panel" id="panel-ledger" role="tabpanel" aria-labelledby="tab-ledger" tabindex="0" hidden>
+          <picture>
+            <source media="(max-width: 640px)" srcset="./assets/screenshots/ledger-mobile.png" width="390" height="1882">
+            <img class="preview-screenshot" src="./assets/screenshots/ledger-desktop.png" width="1440" height="1125" alt="Accounting: monthly spending summary and transaction details." decoding="async">
+          </picture>
+          <div class="preview-detail"><p>The Accounting ledger, with monthly totals, category filters, and editable transaction details.</p><a href="./assets/screenshots/ledger-desktop.png" target="_blank" rel="noopener">Open full-size screenshot<span class="sr-only">: Transaction ledger (new tab)</span> ↗</a></div>
+        </div>
+        <div class="preview-panel" id="panel-wealth" role="tabpanel" aria-labelledby="tab-wealth" tabindex="0" hidden>
+          <picture>
+            <source media="(max-width: 640px)" srcset="./assets/screenshots/wealth-mobile.png" width="390" height="1940">
+            <img class="preview-screenshot" src="./assets/screenshots/wealth-desktop.png" width="1440" height="1081" alt="Wealth: net worth, asset and debt allocation, and manual assets." decoding="async">
+          </picture>
+          <div class="preview-detail"><p>Assets, debts, net worth, and allocation breakdowns in Wealth.</p><a href="./assets/screenshots/wealth-desktop.png" target="_blank" rel="noopener">Open full-size screenshot<span class="sr-only">: Wealth (new tab)</span> ↗</a></div>
+        </div>
+        <div class="preview-panel" id="panel-rules" role="tabpanel" aria-labelledby="tab-rules" tabindex="0" hidden>
+          <picture>
+            <source media="(max-width: 640px)" srcset="./assets/screenshots/rules-mobile.png" width="366" height="1205">
+            <img class="preview-screenshot" src="./assets/screenshots/rules-desktop.png" width="1112" height="945" alt="The Reclassify section in Settings, with a saved rule and two matches awaiting review." decoding="async">
+          </picture>
+          <div class="preview-detail"><p>Settings → Reclassify: save an example, review matching transactions, and apply a category in a batch.</p><a href="./assets/screenshots/rules-desktop.png" target="_blank" rel="noopener">Open full-size screenshot<span class="sr-only">: Reclassification (new tab)</span> ↗</a></div>
         </div>
       </div>
-      <p class="preview-caption">Product illustration with fictional data. Select a view to explore.</p>
+      <p class="preview-caption">Actual application screenshots with fictional data. Select a tab to explore; controls inside the images are not interactive.</p>
       <noscript><p class="preview-caption">Enable JavaScript to switch between preview views. The rest of this page works without it.</p></noscript>
     </section>
     <section class="features wrap" id="features">
