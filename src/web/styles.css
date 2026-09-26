@@ -160,13 +160,14 @@ textarea { resize: vertical; }
 .table-count { color: var(--subtle); font-size: 11px; white-space: nowrap; }
 .count-badge { padding: 1px 5px; border-radius: 4px; background: #d9a4411a; color: var(--orange); font-size: 10px; }
 .table-scroll { max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; position: relative; scrollbar-width: thin; scrollbar-color: var(--border) var(--surface); }
-.transaction-table { border-collapse: collapse; width: 100%; min-width: 680px; font-size: 12px; }
+.transaction-table { border-collapse: collapse; width: 100%; min-width: 920px; table-layout: fixed; font-size: 12px; }
 .transaction-table th { padding: 9px 10px; background: var(--surface-raised); text-align: left; white-space: nowrap; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; font-weight: 500; }
 .transaction-table th:first-child, .transaction-table td:first-child { padding-left: 12px; width: 78px; }
 .transaction-table th:last-child, .transaction-table td:last-child { width: 80px; padding-right: 10px; }
-.transaction-table th:nth-child(3) { width: 120px; }
-.transaction-table th:nth-child(4) { width: 138px; }
-.transaction-table th:nth-child(5) { width: 104px; }
+.transaction-table th.ledger-col-account { width: 170px; }
+.transaction-table th.ledger-col-amount { width: 120px; }
+.transaction-table th.ledger-col-category { width: 138px; }
+.transaction-table th.ledger-col-country { width: 104px; }
 .column-header { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .column-header > button { display: flex; align-items: center; gap: 5px; background: transparent; border: 0; color: inherit; padding: 3px 0; font-size: inherit; white-space: nowrap; }
 .column-header > button:hover { color: var(--text); }
@@ -175,16 +176,22 @@ textarea { resize: vertical; }
 .transaction-table tr:last-child td { border-bottom: 0; }
 .transaction-table tbody tr:hover { background: #ffffff03; }
 .date-cell { color: var(--muted); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.description-cell { display: flex; align-items: center; gap: 8px; min-width: 160px; }
+.description-cell { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .merchant-icon { display: grid; place-items: center; width: 26px; height: 26px; flex-shrink: 0; border-radius: 5px; background: var(--surface-raised); color: var(--muted); font-size: 14px; font-weight: 600; }
 .merchant-dining { background: #d9a44114; color: var(--orange); }
 .merchant-groceries, .merchant-salary { background: var(--accent-soft); color: var(--accent); }
 .merchant-shopping { background: #b4a4e814; color: var(--pink); }
 .merchant-childcare { background: #f6b5a614; color: #f6b5a6; }
 .merchant-travel { background: #79b8ed14; color: var(--cyan); }
-.description-button { text-align: left; font: inherit; line-height: 1.5; background: transparent; border: 0; color: var(--text); padding: 0; overflow-wrap: anywhere; }
+.description-content { display: flex; align-items: center; min-width: 0; }
+.ledger-account-cell { display: flex; align-items: center; min-width: 0; color: var(--muted); font-size: 11px; white-space: nowrap; }
+.ledger-account-cell > span:first-child { overflow: hidden; text-overflow: ellipsis; }
+.ledger-account-cell .account-mask { flex-shrink: 0; white-space: pre; font-variant-numeric: tabular-nums; }
+.description-button { text-align: left; font: inherit; line-height: 1.5; background: transparent; border: 0; color: var(--text); padding: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .description-button:hover { color: var(--accent); }
-.description-cell small, .category-cell small { display: block; color: var(--subtle); font-size: 10px; margin-top: 5px; line-height: 1.6; }
+.description-cell small { flex-shrink: 0; color: var(--subtle); font-size: 10px; white-space: nowrap; }
+.description-cell small:empty { display: none; }
+.category-cell small { display: block; color: var(--subtle); font-size: 10px; margin-top: 5px; line-height: 1.6; }
 .amount-cell { display: block; text-align: right; font-size: 12px; font-family: var(--font-numeric); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .category-cell { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
 .category-cell > svg { color: var(--accent); }
@@ -439,25 +446,25 @@ textarea { resize: vertical; }
 .custom-model-field { margin-top: 14px; }
 
 /* A blue amount band echoes the option chain's strike column. */
-.transaction-table td:nth-child(3) { background: var(--amount-band); border-inline: 1px solid #304c68; }
-.transaction-table th:nth-child(3) { background: #203b56; color: #e8f3ff; border-inline: 1px solid #304c68; }
+.transaction-table td.ledger-col-amount { background: var(--amount-band); border-inline: 1px solid #304c68; }
+.transaction-table th.ledger-col-amount { background: #203b56; color: #e8f3ff; border-inline: 1px solid #304c68; }
 .transaction-table tbody tr:hover { background: var(--surface-raised); }
-.transaction-table tbody tr:hover td:nth-child(3) { background: #203b56; }
+.transaction-table tbody tr:hover td.ledger-col-amount { background: #203b56; }
 .merchant-icon svg { width: 16px; height: 16px; }
 .date-cell, .net-line strong, .table-footer strong { font-family: var(--font-numeric); }
 @media (max-width: 760px) {
   :root { font-size: 12px; }
-  .transaction-table { min-width: 590px; table-layout: fixed; font-size: 11px; }
+  .transaction-table { min-width: 760px; table-layout: fixed; font-size: 11px; }
   .transaction-table th, .transaction-table td { padding: 7px 8px; }
   .transaction-table th:first-child, .transaction-table td:first-child { padding-left: 8px; width: 56px; }
-  .transaction-table th:nth-child(2) { width: 128px; }
-  .transaction-table th:nth-child(3) { width: 104px; }
-  .transaction-table th:nth-child(4) { width: 126px; }
-  .transaction-table th:nth-child(5) { width: 96px; }
+  .transaction-table th.ledger-col-description { width: 150px; }
+  .transaction-table th.ledger-col-account { width: 144px; }
+  .transaction-table th.ledger-col-amount { width: 104px; }
+  .transaction-table th.ledger-col-category { width: 126px; }
+  .transaction-table th.ledger-col-country { width: 96px; }
   .description-cell { min-width: 0; }
   .description-cell > div { min-width: 0; }
   .description-cell .merchant-icon { display: none; }
-  .description-cell small { margin-top: 2px; font-size: 10px; }
   .date-cell, .amount-cell, .location-cell, .category-picker .select-trigger { font-size: 11px; }
   .category-picker .select-trigger { min-width: 104px; min-height: 32px; }
   .column-header > button, .filter-menu > button { min-height: 30px; }
