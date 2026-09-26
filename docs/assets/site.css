@@ -40,8 +40,9 @@ h1 { font-size: clamp(48px, 6vw, 76px); line-height: 1.09; font-weight: 650; let
 .preview-tabs svg { width: 16px; height: 16px; }
 .product-window { background: var(--panel); border: 1px solid #2c384a; border-radius: 13px; color: #e3e9f3; box-shadow: 0 30px 65px -26px #2d3e6655, 0 8px 22px -12px #26385044; overflow: hidden; }
 [hidden] { display: none !important; }
-.preview-screenshot { display: block; width: 100%; height: auto; }
-.preview-detail { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 16px 20px; font-size: 12px; line-height: 1.7; background: #182234; }
+.preview-image-link { display: block; cursor: zoom-in; }
+.preview-screenshot { display: block; width: 100%; max-width: 100%; height: auto; object-fit: contain; }
+.preview-detail { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; padding: 16px 20px; font-size: 12px; line-height: 1.7; background: #182234; }
 .preview-detail p { color: #b8c5d9; }
 .preview-detail a { flex-shrink: 0; color: #d3d2ff; text-decoration: underline; text-underline-offset: 3px; }
 .preview-caption { font-size: 11px; color: var(--muted); text-align: center; margin: 19px 0 0; line-height: 1.8; }

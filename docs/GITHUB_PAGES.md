@@ -48,8 +48,8 @@ GitHub Pages project subdirectory without a separate base-path configuration.
 | `docs/assets/site.css` | Color tokens, typography, layout, mobile styles |
 | `docs/assets/site.js` | Accessible preview tabs, including arrow-key navigation |
 | `docs/assets/favicon.svg` | Existing application icon, with its license notice retained |
-| `docs/assets/screenshots/` | Actual desktop and mobile application captures with fictional data |
-| `scripts/capture-previews.ts` | Isolated fixture setup and screenshot regeneration |
+| `docs/assets/screenshots/` | Manually reviewed desktop captures from the running demo |
+| `scripts/demo-server.ts` | Fictional database and local demo server |
 | `docs/assets/LICENSE-icons.txt` | Lucide / Feather license notices for adapted line icons |
 
 The initial page is in English. Section anchors are `#features`, `#how-it-works`,
@@ -75,26 +75,44 @@ Avenir/Segoe UI system typography gives the introduction a softer tone
 than the dense application interface. The product preview is the visual centerpiece;
 supporting features use open columns rather than repeated boxed cards.
 
-## Refresh application screenshots
+## Run the demo and take screenshots
 
-After changing the app UI, regenerate the four views: Monthly overview,
-Transaction ledger, Wealth, and Reclassification (the actual Settings section).
+Run these commands from the public repository checkout:
 
 ```sh
 npm ci
-npx playwright install chromium
-npm run docs:screenshots
+npm run demo
 ```
 
-The command builds the application, seeds an isolated temporary database with
-invented transactions and assets, and captures the real UI in English at desktop
-and mobile widths. It uses test doubles for Plaid and classification, disables
-Codex execution, and blocks external browser requests. It never reads `data/`,
-saved credentials, or your browser session. The temporary database is removed
-when the command exits normally or throws. It temporarily listens on
-`127.0.0.1:4191`; leave that port available. Only the PNG files are kept.
+Open `http://127.0.0.1:4191/settings#language` and choose English. The command
+builds the application and creates a fresh fictional database in an ignored
+`data/demo-*/` directory. The terminal prints the exact database path. The
+server uses test doubles for Plaid and AI and disables Codex execution. It never
+opens your regular ledger or reads saved credentials. Keep port 4191 available.
+Press Ctrl+C to stop the server; the demo database remains for local inspection.
+Only the seed script is committed, never the generated SQLite files.
 
-Review all eight images before committing them, then check the gallery at desktop
-and mobile widths. Each tab has a caption and a full-size desktop image link;
-the controls pictured inside screenshots are not interactive. The static page
-does not require the application server or the screenshot tooling to run.
+Use the running app in a desktop browser to open and visually check each view:
+
+| Screenshot | Demo route |
+| --- | --- |
+| Monthly overview | `/overview?month=2026-08&period=all` |
+| Transaction ledger | `/?month=2026-08` |
+| Wealth | `/wealth` |
+| Reclassification | `/settings#reclassification` |
+
+Capture each screen after its data and fonts finish loading. The current images
+use a 1440-pixel-wide desktop browser at 2× pixel density. Overview, Accounting,
+and Wealth are full-page captures. Reclassification is a viewport capture after
+scrolling to that section, retaining the real Settings navigation.
+
+Save the reviewed PNGs as `docs/assets/screenshots/demo-{overview,ledger,wealth,rules}.png`
+and update their intrinsic `width` and `height` in `docs/index.html`. Do not
+redraw the application UI or alter its layout for screenshots.
+
+The gallery uses these same complete desktop screenshots at every screen size.
+There is no separate mobile screenshot or responsive recreation of the app.
+Images scale proportionally without cropping; tapping the image or its full-size
+link opens the original for zooming. Check the page in narrow portrait and
+landscape layouts, including a WebKit browser, before publishing. The four tabs
+retain keyboard navigation. The static page does not call the demo server.

@@ -21,7 +21,7 @@
     "migrate:sqlite": "tsx scripts/migrate-sqlite.ts",
     "restore": "tsx scripts/backup.ts restore",
     "migrate:settings": "tsx scripts/migrate-settings.ts",
-    "docs:screenshots": "npm run build && tsx scripts/capture-previews.ts"
+    "demo": "npm run build && tsx scripts/demo-server.ts"
   },
   "dependencies": {
     "@fastify/static": "10.1.3",
