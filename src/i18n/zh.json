@@ -1,4 +1,5 @@
 {
+  "Needs attention": "需要处理",
   "Only local access is allowed.": "只允许本机访问。",
   "This request origin is not allowed.": "请求来源不被允许。",
   "Invalid request origin.": "请求来源无效。",

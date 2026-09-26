@@ -45,6 +45,7 @@ export async function buildApp(config: AppConfig = readConfig(), dependencies: {
     get: (_target, key: keyof PlaidGateway) => createPlaidGateway(config)[key],
   });
   const connections = new Connections(repository, plaid, config);
+  await connections.recheckConsentErrors();
   const jobs = new Jobs(repository, plaid, dependencies.polling);
   let versionCache: { bin: string; value: string | null } | undefined;
   const version = async () => {

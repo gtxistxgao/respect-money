@@ -15,7 +15,7 @@ Updated 2026-09-25. This file separates the implemented application, checks run 
 
 The reviewed source baseline was `85054c6`; the preparation changes correct documentation, harden ignore rules, add a current-snapshot secret scan, and repair two browser-test assumptions about shared fixtures.
 
-- `npm run check`: passed typechecking, ESLint, 133 tests in 25 files, and the production build.
+- `npm run check`: passed typechecking, ESLint, 139 tests in 25 files, and the production build.
 - `npm audit`: zero known vulnerabilities reported at review time.
 - Gitleaks 8.30.1: no findings in the tracked source snapshot; the final staged/exported snapshot is also checked before delivery.
 - Browser regression results are recorded in [Publication review](PUBLICATION_REVIEW.md).

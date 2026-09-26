@@ -26,7 +26,7 @@ export function reconcileAccounts(state: RepositoryState, itemId: string, accoun
 // Explicit consent permits attempting the product endpoint, which initializes
 // products added after Link. Product availability is not proof of consent, and
 // an absent entry must not override consent already granted by the user.
-export function authorizedProducts(item: Item, requested: readonly BankingProduct[]): BankingProduct[] {
+export function authorizedProducts(item: Pick<Item, 'consented_products'>, requested: readonly BankingProduct[]): BankingProduct[] {
   const consented = new Set<string>(item.consented_products ?? requested);
   return bankingProducts.filter((product) => consented.has(product));
 }
@@ -45,6 +45,33 @@ function duplicateConnection(state: RepositoryState, input: LinkCompletion) {
 export class Connections {
   private completionQueue: Promise<unknown> = Promise.resolve();
   constructor(private repository: Repository, private plaid: PlaidGateway, private config: AppConfig) {}
+  async recheckConsentErrors() {
+    const previousWarning = t('Some accounts lack data access. Use Manage accounts to update this connection.');
+    const snapshot = this.repository.snapshot();
+    for (const connection of Object.values(snapshot.connections)) {
+      if (connection.status !== 'error' || connection.lastError !== previousWarning) continue;
+      const token = snapshot.vault.tokens[connection.id];
+      if (!token) continue;
+      try {
+        // Only inspect Item metadata. Do not initialize products, import data,
+        // or run classification while repairing a persisted consent warning.
+        const { item } = await this.plaid.item(token);
+        if (item.item_id !== connection.id || item.error || !item.consented_products) continue;
+        const products = authorizedProducts(item, []);
+        const enabled = this.repository.snapshot().accounts.filter(account => account.itemId === connection.id && account.enabled);
+        if (!enabled.length || enabled.some(account => !products.includes(account.type === 'investment' ? 'investments' : 'transactions'))) continue;
+        await this.repository.change(state => {
+          const current = state.connections[connection.id];
+          if (!current || state.vault.tokens[connection.id] !== token || current.status !== 'error' || current.lastError !== previousWarning) return;
+          const accounts = state.accounts.filter(account => account.itemId === connection.id && account.enabled);
+          if (!accounts.length || accounts.some(account => !products.includes(account.type === 'investment' ? 'investments' : 'transactions'))) return;
+          current.products = products;
+          current.status = 'connected';
+          delete current.lastError;
+        }, false);
+      } catch { /* Preserve the warning if current consent cannot be verified. */ }
+    }
+  }
   disconnect(itemId: string) {
     // Serialize with Link completion, and hold the local writer queue during
     // revocation so a new sync or credential change cannot race the removal.

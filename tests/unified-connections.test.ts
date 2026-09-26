@@ -10,6 +10,7 @@ import { WealthService } from '../src/server/services/wealth.js';
 import { readConfig } from '../src/server/config.js';
 import { createPlaidGateway, PlaidFailure } from '../src/server/integrations/plaid/client.js';
 import { integrationPlaid } from './fixtures/integration.js';
+import { message } from '../src/i18n/index.js';
 
 async function fixture() {
   const directory = await mkdtemp(join(tmpdir(), 'respect-money-unified-'));
@@ -116,6 +117,50 @@ it('imports explicitly consented investments absent from all availability lists 
     expect(f.plaid.sync).toHaveBeenCalledOnce();
     expect(f.plaid.investments).toHaveBeenCalledOnce();
     expect(state.processed.some(row => row.description === 'Fictional cash dividend')).toBe(true);
+  } finally { await f.close(); }
+});
+
+it('rechecks a persisted consent warning without importing transactions or changing historical jobs', async () => {
+  const f = await fixture();
+  try {
+    f.item.available_products = [Products.Balance];
+    await f.complete();
+    await f.repository.change(state => {
+      Object.assign(state.connections['mixed-item'], { products: ['transactions'], status: 'error', lastError: message('Some accounts lack data access. Use Manage accounts to update this connection.') });
+    }, false);
+    const before = f.repository.snapshot();
+    await f.connections.recheckConsentErrors();
+    const after = f.repository.snapshot();
+    expect(after.connections['mixed-item']).toMatchObject({ status: 'connected', products: ['transactions', 'investments'] });
+    expect(after.connections['mixed-item'].lastError).toBeUndefined();
+    expect(after.accounts).toEqual(before.accounts);
+    expect(after.jobs).toEqual(before.jobs);
+    expect(after.records).toEqual(before.records);
+    expect(after.processed).toEqual(before.processed);
+    expect(f.plaid.sync).not.toHaveBeenCalled();
+    expect(f.plaid.investments).not.toHaveBeenCalled();
+    expect(f.plaid.holdings).not.toHaveBeenCalled();
+    await f.connections.recheckConsentErrors();
+    expect(f.plaid.item).toHaveBeenCalledOnce();
+  } finally { await f.close(); }
+});
+
+it.each(['missing consent', 'lookup failure', 'wrong item', 'item error', 'unrelated warning'])('preserves connection errors when rechecking %s', async scenario => {
+  const f = await fixture();
+  try {
+    await f.complete();
+    await f.repository.change(state => {
+      Object.assign(state.connections['mixed-item'], { status: 'error', lastError: scenario === 'unrelated warning' ? 'Unrelated warning' : message('Some accounts lack data access. Use Manage accounts to update this connection.') });
+    }, false);
+    if (scenario === 'missing consent') f.item.consented_products = [Products.Transactions];
+    if (scenario === 'lookup failure') f.plaid.item.mockRejectedValueOnce(new PlaidFailure('NETWORK_ERROR'));
+    if (scenario === 'wrong item' || scenario === 'item error') {
+      const response = await f.plaid.item('fixture-mixed-token');
+      f.plaid.item.mockResolvedValueOnce({ ...response, item: { ...response.item, ...(scenario === 'wrong item' ? { item_id: 'wrong-item' } : { error: { error_code: 'ITEM_LOGIN_REQUIRED' } as NonNullable<Item['error']> }) } });
+    }
+    const before = f.repository.snapshot();
+    await f.connections.recheckConsentErrors();
+    expect(f.repository.snapshot()).toEqual(before);
   } finally { await f.close(); }
 });
 
