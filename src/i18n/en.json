@@ -668,7 +668,7 @@
   "Disconnect": "Disconnect",
   "Disconnected": "Disconnected",
   "Disconnecting…": "Disconnecting…",
-  "Disconnect all accounts on this connection and stop synchronization? Imported transactions, categories and balance history will be kept. Current balances will be removed from net worth.": "Disconnect all accounts on this connection and stop synchronization? Imported transactions, categories and balance history will be kept. Current balances will be removed from net worth.",
+  "Disconnect and permanently delete all accounts on this connection? Their transactions, categories, notes, sync records and balance history will be removed from this app. This cannot be undone.": "Disconnect and permanently delete all accounts on this connection? Their transactions, categories, notes, sync records and balance history will be removed from this app. This cannot be undone.",
   "Linked loans will keep their last known balance as manual debt.": "Linked loans will keep their last known balance as manual debt.",
   "Mortgages": "Mortgages",
   "Vehicle loans": "Vehicle loans",

@@ -11,6 +11,7 @@ import { DATABASE_NAME, SqliteStore } from './sqlite-store.js';
 import { WriterLock } from './writer-lock.js';
 import { hasLegacyData } from './legacy-json.js';
 import { mergeInvestmentCategories } from './category-migration.js';
+import { removeAccounts } from './account-removal.js';
 
 export { connectionSchema, jobSchema } from './state.js';
 export type { Connection, Job, RepositoryState } from './state.js';
@@ -37,6 +38,10 @@ export class Repository {
       if (staleJobs.length) await this.change((state) => {
         for (const job of staleJobs) Object.assign(state.jobs[job.id], { status: 'interrupted', message: t("The application restarted. Unfinished tasks can be retried."), updatedAt: new Date().toISOString() });
       }, false);
+      // Older releases retained disconnected accounts. Apply the same deletion
+      // contract to those orphaned accounts on upgrade, without touching live links.
+      const disconnected = new Set(this.state.accounts.filter(a => a.disconnectedAt && !this.state.connections[a.itemId || '']).map(a => a.id));
+      if (disconnected.size) await this.change(state => removeAccounts(state, disconnected), false);
       // Persisted published rows are authoritative at startup. Rebuilding them here
       // would change the migrated snapshot or expose unfinished classification work.
     } catch (error) { this.store?.close(); this.store = undefined; await this.lock.release(); throw error; }

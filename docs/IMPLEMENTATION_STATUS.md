@@ -5,7 +5,7 @@ Updated 2026-09-25. This file separates the implemented application, checks run 
 ## Current implementation
 
 - Manual bookkeeping, monthly ledger and overview, filtering, edits, splits, duplicate review, and English/Chinese UI.
-- Unified Plaid connections, account selection/update mode, incremental Transactions and ranged Investments synchronization, coverage reporting, retry, explicit account merges, and disconnection with local history retained.
+- Unified Plaid connections, account selection/update mode, incremental Transactions and ranged Investments synchronization, coverage reporting, retry, explicit account merges, and disconnection with associated local data deleted and remaining historical totals recalculated.
 - UI-managed credentials, prompts, models, and advanced settings; isolated classifier batches, cached results, bank-rule fallback, and explicit example-based reclassification.
 - SQLite persistence, serial writes and revision checks, legacy JSON/settings migration, verified backups and transactional restore.
 - Wealth overview, account/debt allocation, manual assets, configurable CNY display estimates, account balance tables, and daily Pacific-date snapshots.
@@ -15,7 +15,7 @@ Updated 2026-09-25. This file separates the implemented application, checks run 
 
 The reviewed source baseline was `85054c6`; the preparation changes correct documentation, harden ignore rules, add a current-snapshot secret scan, and repair two browser-test assumptions about shared fixtures.
 
-- `npm run check`: passed typechecking, ESLint, 122 tests in 25 files, and the production build.
+- `npm run check`: passed typechecking, ESLint, 130 tests in 25 files, and the production build.
 - `npm audit`: zero known vulnerabilities reported at review time.
 - Gitleaks 8.30.1: no findings in the tracked source snapshot; the final staged/exported snapshot is also checked before delivery.
 - Browser regression results are recorded in [Publication review](PUBLICATION_REVIEW.md).

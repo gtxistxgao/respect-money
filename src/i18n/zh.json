@@ -668,7 +668,7 @@
   "Disconnect": "断开连接",
   "Disconnected": "已断开",
   "Disconnecting…": "正在断开…",
-  "Disconnect all accounts on this connection and stop synchronization? Imported transactions, categories and balance history will be kept. Current balances will be removed from net worth.": "断开此连接下的所有账户并停止同步？已导入的交易、分类和余额历史会保留，当前余额将不再计入净资产。",
+  "Disconnect and permanently delete all accounts on this connection? Their transactions, categories, notes, sync records and balance history will be removed from this app. This cannot be undone.": "断开连接并永久删除此连接下的所有账户？相关交易、分类、备注、同步记录和余额历史将从应用中删除。此操作无法撤销。",
   "Linked loans will keep their last known balance as manual debt.": "关联贷款将保留最后已知的欠款金额，转为手动维护。",
   "Mortgages": "房贷",
   "Vehicle loans": "车贷",

@@ -4,7 +4,7 @@ import type { Account } from '../../src/shared/models.js';
 import type { SettingsStatus } from '../../src/web/api.js';
 
 const tr = (key: string, params?: Record<string, string | number>) => translate('zh', key, params);
-test('disconnect confirmation supports cancellation and retry, preserves history and removes the account from sync', async ({ page, request }, testInfo) => {
+test('disconnect confirmation supports cancellation and retry, deletes account data and removes the account from Settings and sync', async ({ page, request }, testInfo) => {
   const connect = async () => {
     const session = await (await request.post('/api/plaid/link-token', { data: {} })).json();
     expect((await request.post('/api/plaid/complete', { data: { sessionId: session.sessionId, publicToken: 'fixture-bank-public', institution: 'Chase' } })).ok()).toBe(true);
@@ -16,10 +16,10 @@ test('disconnect confirmation supports cancellation and retry, preserves history
   const job = await (await request.post('/api/jobs', { data: { accountIds: [bank.id], range: { start: '2026-08-01', end: '2026-08-31' } } })).json();
   await expect.poll(async () => (await (await request.get('/api/jobs')).json()).find((row: { id: string }) => row.id === job.id)?.status).toBe('succeeded');
   const ledgerUrl = `/api/accounting/transactions?month=2026-08&accounts=${bank.id}&mode=all`;
-  const before = await (await request.get(ledgerUrl)).json();
+  expect((await (await request.get(ledgerUrl)).json()).rows.length).toBeGreaterThan(0);
   await request.post('/api/wealth/refresh');
   await expect.poll(async () => (await (await request.get('/api/wealth')).json()).refreshing).toBe(false);
-  const history = await (await request.get('/api/wealth/history')).json();
+
   let release = () => {};
   try {
     await page.goto('/settings#bank-connections');
@@ -30,6 +30,7 @@ test('disconnect confirmation supports cancellation and retry, preserves history
     const dialog = page.getByRole('dialog', { name: tr('Disconnect {p0}', { p0: 'Chase' }) });
     await dialog.getByRole('button', { name: tr('Cancel'), exact: true }).click();
     await expect(dialog).toHaveCount(0); await expect(disconnect).toBeVisible();
+    expect((await (await request.get(ledgerUrl)).json()).rows.length).toBeGreaterThan(0);
     for (const width of [390, 320]) {
       await page.setViewportSize({ width, height: 844 }); await disconnect.click();
       await expect(dialog).toBeVisible();
@@ -51,11 +52,15 @@ test('disconnect confirmation supports cancellation and retry, preserves history
     release(); await expect(dialog).toHaveCount(0);
     await expect(disconnect).toHaveCount(0);
     const row = page.getByRole('table', { name: tr('My accounts'), exact: true }).getByRole('row').filter({ hasText: bank.name });
-    await expect(row).toContainText(tr('Disconnected'));
-    expect(await (await request.get(ledgerUrl)).json()).toEqual(before);
-    expect(await (await request.get('/api/wealth/history')).json()).toEqual(history);
+    await expect(row).toHaveCount(0);
+    expect((await (await request.get(ledgerUrl)).json()).rows).toEqual([]);
+    expect((await (await request.get('/api/accounts')).json()).some((a: Account) => a.id === bank.id)).toBe(false);
+    for (const entry of await (await request.get('/api/wealth/history')).json()) {
+      const snapshot = await (await request.get(`/api/wealth/history/${entry.date}`)).json();
+      expect(snapshot.accounts.some((a: { id: string }) => a.id === bank.id)).toBe(false);
+    }
     expect((await (await request.get('/api/wealth')).json()).accounts.some((a: { id: string }) => a.id === bank.id)).toBe(false);
-    await page.reload(); await expect(row).toContainText(tr('Disconnected'));
+    await page.reload(); await expect(row).toHaveCount(0);
     await page.goto('/?month=2026-08');
     await page.getByRole('button', { name: tr('Sync bank data'), exact: true }).click();
     await page.getByRole('combobox', { name: tr('Accounts to update') }).click();
@@ -63,6 +68,6 @@ test('disconnect confirmation supports cancellation and retry, preserves history
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: tr('Reclassify'), exact: true }).click();
     await page.getByRole('combobox', { name: tr('Accounts to update') }).click();
-    await expect(page.getByRole('option', { name: `${bank.name} · ${bank.mask}`, exact: true })).toBeVisible();
+    await expect(page.getByRole('option', { name: `${bank.name} · ${bank.mask}`, exact: true })).toHaveCount(0);
   } finally { release(); await connect(); }
 });

@@ -54,7 +54,7 @@ Potential duplicates between manual and imported transactions require confirmati
 
 The initial enabled range is 2026-01-01 through today; users can request earlier dates. Boundaries follow Pacific calendar dates. Requested ranges, observed records, and provider processing status are separate concepts: a bank returning no records does not prove a complete empty period.
 
-Transactions use paginated incremental synchronization, applying additions, modifications, removals, and cross-month corrections before saving the cursor. Investment activity uses date ranges and pagination. A failed source or account does not clear successfully retained data from others. Previously imported history remains local when the upstream service can no longer supply it.
+Transactions use paginated incremental synchronization, applying additions, modifications, removals, and cross-month corrections before saving the cursor. Investment activity uses date ranges and pagination. A failed source or account does not clear successfully retained data from others. Previously imported history remains local when the upstream service can no longer supply it. Explicitly disconnecting is destructive: remove the connection’s accounts, transactions, classifications, notes, splits, coverage, and associated job records from the app and Settings. Scrub those accounts from balance snapshots and recalculate remaining totals. Expire affected reclassification previews and prevent delayed refreshes from restoring deleted data. Keep unrelated accounts, reusable classification rules, and separately entered assets; linked loans become manual debt using the last known balance. Existing backups and exports are unchanged. On startup, clean up disconnected accounts retained by older versions.
 
 Synchronization is explicitly triggered in the UI. Jobs survive browser navigation; unfinished jobs are marked interrupted when the backend restarts. The app does not require a public webhook receiver or perform scheduled synchronization while stopped.
 
@@ -68,7 +68,7 @@ All connected accounts participate regardless of their Accounting enable switch.
 
 Manual assets store valuation date, value, and debt or a linked liability account. Real estate estimates are manually entered. Net worth is total assets minus total debts and can be negative. CNY equivalents use the saved configurable rate and are display estimates only.
 
-Successful balance updates save one snapshot per Pacific day, replacing that day's previous snapshot. Snapshots retain their captured values, names, debt links, inclusion state, and exchange rate. Partial data is marked; total account-refresh failure preserves an existing snapshot. Manual-only portfolios can save snapshots. History is not backfilled before connection.
+Successful balance updates save one snapshot per Pacific day, replacing that day's previous snapshot. Snapshots retain their captured values, names, debt links, inclusion state, and exchange rate, except when disconnected account data is explicitly removed. Partial data is marked; total account-refresh failure preserves an existing snapshot. Manual-only portfolios can save snapshots. History is not backfilled before connection.
 
 ## Persistence and privacy
 

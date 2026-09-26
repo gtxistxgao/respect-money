@@ -8,7 +8,7 @@ Respect Money is intended for one trusted user on their own computer. The server
 
 Git ignores `data/`, local environment files, database files, key files, logs, editor state, build output, and test reports. Ignore rules do not remove already tracked content and can be bypassed by forced staging. Review staged changes before every commit. Never share databases, bank exports, real receipts, authentication files, screenshots with personal records, or raw provider/model logs in issues or pull requests.
 
-The settings API omits the Plaid secret. Bank passwords are handled by Plaid Link or the institution, not received by this app. Disconnecting a connection removes its Plaid access through the provider; previously imported local records remain in the database and existing backups.
+The settings API omits the Plaid secret. Bank passwords are handled by Plaid Link or the institution, not received by this app. Disconnecting revokes Plaid access and deletes the connection’s accounts and associated records from the active database, including imported transactions, overrides, classifications, sync records, and account balance history. Historical totals are recalculated for the remaining accounts. Separately entered assets remain, with linked loans converted to manual debt. Previously created backups and exports are not rewritten; they may still contain the removed data.
 
 ## External services
 

@@ -38,7 +38,7 @@ export class WealthService {
     const attemptedAt = new Date().toISOString();
     let successfulConnections = 0;
     const refreshedAccounts = new Set<string>();
-    const errors: { name: string; error: string }[] = [];
+    const errors: { name: string; error: string; connectionId: string }[] = [];
     for (const connection of Object.values(snapshot.connections)) {
       try {
         const token = snapshot.vault.tokens[connection.id];
@@ -52,12 +52,12 @@ export class WealthService {
             if (holdings.item.item_id !== connection.id) throw new AppError(t('The bank returned an account that does not match this connection.'), 502);
           } catch (error) {
             holdings = undefined;
-            errors.push({ name: connection.institution, error: safeError(error) });
+            errors.push({ name: connection.institution, error: safeError(error), connectionId: connection.id });
           }
         }
         const fetchedAt = new Date().toISOString();
         const freshIds = await this.repository.change((state) => {
-          if (!state.connections[connection.id]) return;
+          if (!state.connections[connection.id] || state.vault.tokens[connection.id] !== token || state.connections[connection.id].createdAt !== connection.createdAt) return;
           reconcileAccounts(state, connection.id, response.accounts);
           const wealth = state.wealth ||= emptyWealth();
           for (const account of state.accounts.filter((account) => account.itemId === connection.id)) {
@@ -73,14 +73,18 @@ export class WealthService {
           return state.accounts.filter((account) => account.itemId === connection.id && response.accounts.some((source) => source.account_id === account.plaidAccountId)).map((account) => account.id);
         }, false);
         if (freshIds) { successfulConnections++; for (const id of freshIds) refreshedAccounts.add(id); }
-      } catch (error) { errors.push({ name: connection.institution, error: safeError(error) }); }
+      } catch (error) { errors.push({ name: connection.institution, error: safeError(error), connectionId: connection.id }); }
     }
     await this.repository.change((state) => {
       const wealth = state.wealth ||= emptyWealth();
-      wealth.lastAttemptAt = attemptedAt; wealth.errors = errors;
+      const currentErrors = errors.filter(error => state.connections[error.connectionId]
+        && state.vault.tokens[error.connectionId] === snapshot.vault.tokens[error.connectionId]
+        && state.connections[error.connectionId].createdAt === snapshot.connections[error.connectionId].createdAt)
+        .map(({ name, error }) => ({ name, error }));
+      wealth.lastAttemptAt = attemptedAt; wealth.errors = currentErrors;
       // A completely failed refresh must not replace a good day's snapshot with stale balances.
       const manualOnly = !Object.keys(state.connections).length && (wealth.assets.length > 0 || Object.keys(wealth.history || {}).length > 0);
-      if (successfulConnections || manualOnly) {
+      if ((successfulConnections && state.accounts.some(a => refreshedAccounts.has(a.id))) || manualOnly) {
         const summary = wealthSummary(state);
         const capturedAt = new Date().toISOString();
         const date = today(new Date(capturedAt));
@@ -88,9 +92,9 @@ export class WealthService {
         history[date] = structuredClone({
           date, capturedAt, usdCnyRate: summary.usdCnyRate,
           assetsCents: summary.assetsCents, debtsCents: summary.debtsCents, netWorthCents: summary.netWorthCents,
-          missingAccounts: summary.missingAccounts, partial: errors.length > 0 || summary.missingAccounts > 0,
+          missingAccounts: summary.missingAccounts, partial: currentErrors.length > 0 || summary.missingAccounts > 0,
           accounts: summary.accounts.map((account) => ({ ...account, fresh: refreshedAccounts.has(account.id) })),
-          assets: summary.assets, allocation: summary.allocation, errors,
+          assets: summary.assets, allocation: summary.allocation, errors: currentErrors,
         });
       }
     }, false);

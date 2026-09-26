@@ -66,7 +66,7 @@ Splits conserve signed amounts and replace the parent only for aggregation. Dele
 
 ## Banking and background work
 
-A unified Link flow initializes Transactions and requests additional consent for Investments. Existing connections use update mode for account selection and additional consent. Tokens remain in private database tables. Browser status omits access tokens and cursors. Disconnect removes the Item through the gateway and detaches the connection while preserving imported history.
+A unified Link flow initializes Transactions and requests additional consent for Investments. Existing connections use update mode for account selection and additional consent. Tokens remain in private database tables. Browser status omits access tokens and cursors. Disconnect removes the Item through the gateway and atomically deletes the connection, its accounts, source records, classifications, overrides, published rows, coverage, and related jobs. Balance snapshots are scrubbed and recalculated; account-dependent reclassification previews expire. Unrelated accounts and manual assets remain. Startup removes disconnected accounts retained by older versions.
 
 Transactions synchronization consumes all pages before committing the cursor, restarts pagination on provider mutation, applies removals, and handles corrections outside the selected month. Requested ranges are merged rather than used to delete previously enabled history. Investments reconciles complete requested ranges, pagination, cancellations, securities references, and reinvestments. Partial failures are explicit.
 
@@ -92,7 +92,7 @@ Route modules and shared Zod schemas are the authoritative request/response cont
 | `GET /api/settings/models` | Available CLI models |
 | `GET /api/accounts`, `POST /api/accounts/manual`, `PATCH /api/accounts/:id` | Account management |
 | `POST /api/plaid/link-token`, `POST /api/plaid/complete` | Begin and complete Link |
-| `DELETE /api/plaid/connections/:id` | Disconnect while preserving imported history |
+| `DELETE /api/plaid/connections/:id` | Disconnect and delete associated local account data |
 | `GET /api/accounting/months`, `/summary`, `/transactions`, `/coverage`, `/overview` | Ledger queries under `/api/accounting` |
 | `POST /api/transactions/manual`, `PATCH /api/transactions/manual/:id` | Manual records |
 | `PUT /api/transactions/:id/overrides`, `/splits`, `/match` | Edit, split, or link duplicates |

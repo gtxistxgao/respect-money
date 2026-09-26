@@ -140,7 +140,7 @@ Open **Settings → Bank connections**, enter your Plaid client ID and secret, s
 2. Checking, credit, and investment accounts are identified from the returned account types. Account switches control inclusion in Accounting.
 3. The first synchronization enables transactions from **2026-01-01 through today**. Use the date-range controls to request earlier history.
 4. Use **Manage accounts** on an existing connection to add accounts or consent. Use **Reauthorize** for an expired connection. Reusing the connection preserves its identity and history.
-5. Disconnecting removes access to the Plaid Item while retaining imported local history. See the confirmation in Settings before disconnecting.
+5. Disconnecting revokes the Plaid Item and permanently removes its accounts, transactions, categories, notes, sync records, and account balance history from the app. Other accounts and manually entered assets remain; linked loans keep their last known debt as a manual amount. Existing backup files are not changed. See the deletion confirmation in Settings before disconnecting.
 
 Existing connections are tied to their Plaid environment and client ID. Those fields cannot be changed while accounts are connected; secret rotation is supported. Wait for active synchronization or classification jobs to finish before changing configuration.
 

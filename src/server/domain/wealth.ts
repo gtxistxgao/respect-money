@@ -1,6 +1,6 @@
 import type { AccountBase, InvestmentsHoldingsGetResponse, Security } from 'plaid';
 import { defaultUsdCnyRate } from '../../shared/settings.js';
-import { emptyWealth, type AccountBalance, type AssetKind, type WealthSummary } from '../../shared/wealth.js';
+import { emptyWealth, type AccountBalance, type AssetKind, type WealthSummary, type WealthAccount, type ManualAsset } from '../../shared/wealth.js';
 import type { RepositoryState } from '../storage/state.js';
 import { AppError, cents } from './ledger.js';
 import { message as t } from '../../i18n/index.js';
@@ -51,6 +51,16 @@ export function wealthSummary(state: RepositoryState, refreshing = false): Wealt
     id: account.id, name: account.name, mask: account.mask, institution: account.institution, type: account.type,
     included: true, balance: wealth.balances[account.id] || null,
   }));
+  return {
+    ...wealthTotals(accounts, wealth.assets), accounts,
+    usdCnyRate: state.settings?.usdCnyRate ?? defaultUsdCnyRate,
+    refreshing, lastAttemptAt: wealth.lastAttemptAt, errors: wealth.errors,
+    needsRefresh: (!wealth.lastAttemptAt && Object.keys(state.connections).length > 0) || accounts.some((account) => !account.balance && (!wealth.lastAttemptAt || (state.accounts.find((a) => a.id === account.id)?.createdAt || '') > wealth.lastAttemptAt)),
+  };
+}
+
+// Shared by live balances and snapshots after an account is removed.
+export function wealthTotals(accounts: WealthAccount[], manualAssets: ManualAsset[]) {
   let assetsCents = 0; let debtsCents = 0; let missingAccounts = 0;
   const groups = new Map<AssetKind, number>();
   const add = (kind: AssetKind, value: number) => { groups.set(kind, (groups.get(kind) || 0) + value); assetsCents += value; };
@@ -60,7 +70,7 @@ export function wealthSummary(state: RepositoryState, refreshing = false): Wealt
     if (balance.netCents < 0) debtsCents -= balance.netCents;
     else for (const part of balance.allocation) add(part.kind, part.valueCents);
   }
-  const assets = wealth.assets.map((asset) => {
+  const assets = manualAssets.map((asset) => {
     add(asset.kind, asset.valueCents);
     const linked = accounts.find((account) => account.id === asset.debtAccountId);
     const balance = linked?.balance;
@@ -73,10 +83,8 @@ export function wealthSummary(state: RepositoryState, refreshing = false): Wealt
   });
   if (![assetsCents, debtsCents, assetsCents - debtsCents].every(Number.isSafeInteger)) throw new AppError(t('Invalid value.'));
   return {
-    usdCnyRate: state.settings?.usdCnyRate ?? defaultUsdCnyRate,
     assetsCents, debtsCents, netWorthCents: assetsCents - debtsCents, missingAccounts,
     allocation: [...groups].filter(([, value]) => value > 0).sort((a, b) => b[1] - a[1]).map(([kind, valueCents]) => ({ kind, valueCents, percent: assetsCents ? valueCents / assetsCents * 100 : 0 })),
-    accounts, assets, refreshing, lastAttemptAt: wealth.lastAttemptAt, errors: wealth.errors,
-    needsRefresh: (!wealth.lastAttemptAt && Object.keys(state.connections).length > 0) || accounts.some((account) => !account.balance && (!wealth.lastAttemptAt || (state.accounts.find((a) => a.id === account.id)?.createdAt || '') > wealth.lastAttemptAt)),
+    assets,
   };
 }

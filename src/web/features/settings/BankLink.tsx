@@ -55,7 +55,7 @@ export function BankLinkControls() {
     {removing && <Modal title={t('Disconnect {p0}', { p0: removing.institution })} onClose={() => setRemoving(undefined)} dismissible={!disconnecting}><div className="form-body">
       <ErrorNotice error={disconnectError} />
       <p>{removing.institution} · {products(removing)}</p>
-      <p>{t('Disconnect all accounts on this connection and stop synchronization? Imported transactions, categories and balance history will be kept. Current balances will be removed from net worth.')}</p>
+      <p>{t('Disconnect and permanently delete all accounts on this connection? Their transactions, categories, notes, sync records and balance history will be removed from this app. This cannot be undone.')}</p>
       <p className="muted small">{t('Linked loans will keep their last known balance as manual debt.')}</p>
       <div className="form-actions"><button className="button secondary" disabled={disconnecting} onClick={() => setRemoving(undefined)}>{t('Cancel')}</button><button className="button danger" disabled={disconnecting} onClick={() => void disconnect()}>{disconnecting ? t('Disconnecting…') : t('Disconnect')}</button></div>
     </div></Modal>}

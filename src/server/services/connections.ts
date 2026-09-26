@@ -7,6 +7,7 @@ import { AppError } from '../domain/ledger.js';
 import type { Account } from '../../shared/models.js';
 import type { Repository, RepositoryState } from '../storage/repository.js';
 import { PlaidFailure, type PlaidGateway } from '../integrations/plaid/client.js';
+import { removeAccounts } from '../storage/account-removal.js';
 
 export function reconcileAccounts(state: RepositoryState, itemId: string, accounts: AccountBase[], selectedIds?: string[]) {
   const institution = state.connections[itemId]?.institution || 'Bank';
@@ -70,13 +71,7 @@ export class Connections {
       }
       delete state.connections[itemId]; delete state.vault.tokens[itemId];
       for (const [id, session] of Object.entries(state.vault.links)) if (session.connectionId === itemId) delete state.vault.links[id];
-      const now = new Date().toISOString();
-      for (const account of accounts) account.disconnectedAt = now;
-      if (state.wealth) {
-        for (const id of ids) delete state.wealth.balances[id];
-        state.wealth.excludedAccountIds = state.wealth.excludedAccountIds.filter(id => !ids.has(id));
-        if (!Object.values(state.connections).some(other => other.institution === connection.institution)) state.wealth.errors = state.wealth.errors.filter(error => error.name !== connection.institution);
-      }
+      removeAccounts(state, ids, [connection.institution]);
       return { ok: true };
     }, false));
     this.completionQueue = operation.catch(() => undefined);

@@ -19,7 +19,7 @@ function eligible(row: LedgerRow, state: RepositoryState, rule: Reclassification
 }
 
 export class ReclassificationService {
-  private previews = new Map<string, { value: ReclassificationPreview; createdAt: number }>();
+  private previews = new Map<string, { value: ReclassificationPreview; createdAt: number; accountIds: string[] }>();
   private running?: Promise<void>;
   constructor(private repository: Repository, private matcher: () => MatchPatterns) {}
   async save(input: ReclassificationRuleInput, id?: string, revision?: number) {
@@ -42,7 +42,8 @@ export class ReclassificationService {
   }
   get(id: string) {
     const preview = this.previews.get(id);
-    if (!preview || (preview.value.status !== 'scanning' && Date.now() - preview.createdAt > 60 * 60 * 1000)) {
+    const accounts = new Set(this.repository.snapshot().accounts.map(a => a.id));
+    if (!preview || preview.accountIds.some(id => !accounts.has(id)) || (preview.value.status !== 'scanning' && Date.now() - preview.createdAt > 60 * 60 * 1000)) {
       this.previews.delete(id);
       throw new AppError(t('This preview expired. Scan again.'), 404);
     }
@@ -65,10 +66,11 @@ export class ReclassificationService {
     for (const [id, saved] of this.previews) if (Date.now() - saved.createdAt > 60 * 60 * 1000) this.previews.delete(id);
     while (this.previews.size >= 5) this.previews.delete(this.previews.keys().next().value!);
     const preview: ReclassificationPreview = { id: randomUUID(), rule, status: 'scanning', scanned: 0, total: candidates.length, skipped: state.processed.length - candidates.length, matches: [] };
-    this.previews.set(preview.id, { value: preview, createdAt: Date.now() });
+    this.previews.set(preview.id, { value: preview, createdAt: Date.now(), accountIds: state.accounts.map(account => account.id) });
     const matcher = this.matcher(); // Freeze model configuration for this scan.
     this.running = this.scan(preview, candidates, matcher).finally(() => {
-      this.previews.get(preview.id)!.createdAt = Date.now();
+      const saved = this.previews.get(preview.id);
+      if (saved) saved.createdAt = Date.now();
       this.running = undefined;
     });
     return structuredClone(preview);
@@ -82,6 +84,13 @@ export class ReclassificationService {
         }));
         const rowsByRef = new Map(inputs.map((input, index) => [input.ref, batch[index]]));
         const result = await matchPatternBatch(matcher, preview.rule, inputs);
+        // Disconnect may complete while the model is responding. Never publish
+        // matches from removed accounts or resurrect an invalidated preview.
+        const accounts = new Set(this.repository.snapshot().accounts.map(a => a.id));
+        const saved = this.previews.get(preview.id);
+        if (!saved || saved.accountIds.some(id => !accounts.has(id))) {
+          this.previews.delete(preview.id); return;
+        }
         for (const match of result) {
           const row = rowsByRef.get(match.ref)!;
           preview.matches.push({ id: row.parentId, version: row.version, description: row.description, postedDate: row.postedDate, accountName: row.accountName,
@@ -117,8 +126,8 @@ export class ReclassificationService {
       }
       return selected.size;
     });
-    const saved = this.previews.get(id)!.value;
-    saved.status = 'applied'; saved.applied = applied;
+    const saved = this.previews.get(id)?.value;
+    if (saved) { saved.status = 'applied'; saved.applied = applied; }
     return { applied };
   }
   async close() { await this.running; }
