@@ -180,6 +180,8 @@ CNY equivalents are display estimates using the manually configured **Settings â
 
 **Update balances** saves one snapshot per Pacific calendar date; another update on that date replaces it. Each snapshot retains the names, values, debts, inclusion state, and exchange rate captured at the time. Partial updates mark stale or missing values; a complete account-refresh failure does not overwrite an existing snapshot. Manual-only portfolios can also save snapshots. No history is backfilled before connection, and nothing is collected while the backend is stopped.
 
+**Wealth â†’ Balance history** starts with separate USD trends for net worth, total assets, and total debts. Click a date on any chart to select the matching snapshot below; the date picker and all three charts stay in sync. Keyboard users can focus a chart and use the arrow keys to move between saved dates. Hollow points identify partial updates.
+
 ## Local storage, migration, and backups
 
 ```text

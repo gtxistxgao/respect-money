@@ -1,4 +1,7 @@
 {
+  "{p0} trend": "{p0} trend",
+  "Select a date on any chart to view its snapshot below. Use the left and right arrow keys to move between dates.": "Select a date on any chart to view its snapshot below. Use the left and right arrow keys to move between dates.",
+  "Hollow points indicate partial updates.": "Hollow points indicate partial updates.",
   "Needs attention": "Needs attention",
   "Only local access is allowed.": "Only local access is allowed.",
   "This request origin is not allowed.": "This request origin is not allowed.",

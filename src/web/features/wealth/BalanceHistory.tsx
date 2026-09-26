@@ -7,6 +7,7 @@ import { ErrorNotice, Loading } from '../../components.js';
 import { AccountBalancesTable } from './AccountBalancesTable.js';
 import { assetMoney } from './api.js';
 import { Select } from '../../Select.js';
+import { BalanceTrends } from './BalanceTrends.js';
 
 function timestamp(value: string) {
   return new Intl.DateTimeFormat(intlLocale(), { timeZone: 'America/Los_Angeles', dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
@@ -16,11 +17,12 @@ export function BalanceHistory({ refreshing }: { refreshing: boolean }) {
   const queryClient = useQueryClient();
   useEffect(() => { if (!refreshing) void queryClient.invalidateQueries({ queryKey: ['wealth', 'history'] }); }, [refreshing, queryClient]);
   const history = useQuery({ queryKey: ['wealth', 'history'], queryFn: () => api<WealthHistoryEntry[]>('/wealth/history'), refetchInterval: refreshing ? 1000 : false });
-  const date = selected || history.data?.[0]?.date;
+  const date = history.data?.some(entry => entry.date === selected) ? selected : history.data?.[0]?.date;
   const detail = useQuery({ queryKey: ['wealth', 'history', date], queryFn: () => api<WealthSnapshot>(`/wealth/history/${date}`), enabled: Boolean(date), refetchInterval: refreshing ? 1000 : false });
   const snapshot = detail.data;
   return <section className="wealth-panel wealth-history" aria-label={t('Balance history')}>
     <div className="wealth-history-body">
+      {history.data?.length ? <BalanceTrends history={history.data} selected={date!} onSelect={setSelected} /> : null}
       <p className="wealth-footnote">{t('Each balance update saves a local snapshot. One per Pacific date; updates on the same day replace it. Earlier dates are not backfilled.')}</p>
       <ErrorNotice error={history.error || detail.error} />
       {history.isPending ? <Loading /> : history.data?.length === 0 ? <p className="wealth-empty">{t('No balance history yet. Update balances to save the first snapshot.')}</p> : history.data?.length ? <>

@@ -1,4 +1,7 @@
 {
+  "{p0} trend": "{p0}趋势",
+  "Select a date on any chart to view its snapshot below. Use the left and right arrow keys to move between dates.": "点击任一图表上的日期，即可查看下方对应快照。也可用左右方向键切换日期。",
+  "Hollow points indicate partial updates.": "空心点表示该次快照为不完整更新。",
   "Needs attention": "需要处理",
   "Only local access is allowed.": "只允许本机访问。",
   "This request origin is not allowed.": "请求来源不被允许。",

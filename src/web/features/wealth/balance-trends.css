@@ -1,0 +1,31 @@
+.balance-trends { padding: 18px 18px 14px; margin-bottom: 16px; border-bottom: 1px solid var(--line); }
+.balance-trends-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.balance-trend { min-width: 0; --trend-color: var(--accent); }
+.balance-trend-assets { --trend-color: var(--cyan); }
+.balance-trend-debts { --trend-color: var(--orange); }
+.balance-trend-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.balance-trend-heading h2 { font-size: 12px; font-weight: 500; }
+.balance-trend-heading > span { color: var(--subtle); font-size: 10px; }
+.balance-trend-value { margin-top: 8px; color: var(--trend-color); font: 500 18px var(--font-numeric); overflow-wrap: anywhere; }
+.balance-trend-chart { display: block; width: 100%; height: auto; margin-top: 6px; overflow: visible; cursor: pointer; }
+.balance-trend-grid { stroke: var(--line); stroke-width: 1; }
+.balance-trend-zero { stroke: var(--muted); }
+.balance-trend-axis { fill: var(--muted); font: 12px var(--font-numeric); }
+.balance-trend-line { fill: none; stroke: var(--trend-color); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.balance-trend-selected { stroke: var(--trend-color); stroke-opacity: .55; stroke-dasharray: 3 4; }
+.balance-trend-target { fill: transparent; }
+.balance-trend-dot { fill: var(--trend-color); stroke: var(--surface); stroke-width: 1.5; }
+.balance-trend-partial { fill: var(--surface); stroke: var(--trend-color); stroke-width: 2; }
+.balance-trend-point { outline: none; }
+.balance-trend-point:hover .balance-trend-target, .balance-trend-point:focus-visible .balance-trend-target { fill: var(--surface-raised); stroke: var(--trend-color); stroke-width: 1; }
+.balance-trends > .wealth-footnote { margin: 8px 0 0; }
+.balance-trends-partial-key { display: block; }
+@media (max-width: 1100px) {
+  .balance-trends-grid { grid-template-columns: 1fr; gap: 20px; }
+  .balance-trend + .balance-trend { padding-top: 16px; border-top: 1px solid var(--line); }
+  .balance-trend-chart { max-width: 560px; }
+}
+@media (max-width: 480px) {
+  .balance-trends { padding-inline: 10px; }
+  .balance-trend-axis { font-size: 14px; }
+}
