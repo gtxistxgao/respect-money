@@ -57,6 +57,15 @@ and use only synthetic transactions or sanitized screenshots. Project links poin
 to `gtxistxgao/respect-money`; update the links, clone directory, README,
 and expected Pages URL together if the repository is renamed or moved.
 
+Keep marketing copy aligned with the README: the application is free to run,
+its ledger is stored locally, and AI classification/reclassification uses the
+user's Codex model service. Explain Plaid's free Trial limit as 10 Items rather
+than 10 unique institutions, with eligibility and slot-reuse limits linked to
+Plaid's documentation. The page includes a six-step onboarding flow, production
+startup commands, optional tmux instructions, and the future local-model roadmap.
+Do not describe current AI processing as fully offline or planned model support
+as already available.
+
 Current design: cool paper (`#f5f7fb`), navy text (`#202d46`), indigo actions
 (`#5251ce`), and a dark ledger preview (`#111a2a`) with green income and amber
 spending. Avenir/Segoe UI system typography gives the introduction a softer tone

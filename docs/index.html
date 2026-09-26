@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f7fb">
-  <meta name="description" content="Respect Money is a personal finance ledger with bank sync, AI-assisted categories, and a clear view of your cash flow. Your ledger lives on your computer.">
-  <meta property="og:title" content="Respect Money — Make sense of every transaction.">
-  <meta property="og:description" content="Your accounts, spending, and categories in one personal ledger. Stored on your computer. Reviewed by you.">
+  <meta name="description" content="A free, local alternative to apps like Rocket Money. Connect accounts with Plaid, classify transactions with Codex, and correct recurring mistakes in batches.">
+  <meta property="og:title" content="Respect Money — Your money. Your machine. Less busywork.">
+  <meta property="og:description" content="A free app with a local ledger, optional Plaid bank sync, and Codex-assisted batch classification. No Respect Money subscription.">
   <meta property="og:type" content="website">
-  <title>Respect Money — Make sense of every transaction.</title>
+  <title>Respect Money — Your money. Your machine. Less busywork.</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./assets/site.css">
   <script src="./assets/site.js" defer></script>
@@ -28,16 +28,16 @@
     <symbol id="i-split" viewBox="0 0 24 24"><path d="M12 21v-7M5 3v4c0 4 7 4 7 7 0-3 7-3 7-7V3M2 6l3-3 3 3m8 0 3-3 3 3"/></symbol>
   </svg>
   <header class="site-header wrap">
-    <a class="brand" href="./" aria-label="Respect Money home"><span class="brand-mark"><svg><use href="#i-wallet"/></svg></span>respect money<span class="brand-dot">.</span></a>
+    <a class="brand" href="./" aria-label="Respect Money home"><span class="brand-mark"><img src="./assets/favicon.svg" width="34" height="34" alt=""></span>respect money<span class="brand-dot">.</span></a>
     <nav aria-label="Main navigation"><a href="#features">Features</a><a href="#how-it-works">How it works</a><a class="nav-github" href="https://github.com/gtxistxgao/respect-money" aria-label="View Respect Money on GitHub"><svg><use href="#i-github"/></svg><span>GitHub</span></a></nav>
   </header>
   <main id="main">
     <!-- Hero: project positioning. Keep product claims in sync with README.md. -->
     <section class="hero wrap">
-      <h1>Make sense of<br>every transaction.</h1>
-      <p class="hero-description">Your accounts, spending, and categories in one personal ledger.<br class="desktop-break"> Stored on your computer. Reviewed by you.</p>
+      <h1>Your money.<br>Your machine.</h1>
+      <p class="hero-description">A free, local alternative to apps like Rocket Money.<br class="desktop-break"> Connect your accounts. Let AI sort the transactions.<br class="desktop-break"> Spend less time labeling and more time understanding.</p>
       <div class="hero-actions"><a class="button primary" href="https://github.com/gtxistxgao/respect-money"><svg><use href="#i-github"/></svg>Explore on GitHub</a><a class="button secondary" href="#get-started">Run it locally</a></div>
-      <p class="hero-note">Start with manual entries. Add bank sync and AI when you’re ready.</p>
+      <p class="hero-note">No Respect Money subscription. Your ledger stays on your computer.<br>Plaid and AI are optional online services with their own terms.</p>
     </section>
     <!-- Product illustration: fictional data only, no connection to the application. -->
     <section class="preview-section wrap" aria-label="Interactive product illustration">
@@ -93,33 +93,60 @@
       <noscript><p class="preview-caption">Enable JavaScript to switch between preview views. The rest of this page works without it.</p></noscript>
     </section>
     <section class="features wrap" id="features">
-      <div class="section-intro"><h2>Less sorting.<br>More understanding.</h2><p>From the first imported transaction to the last category you adjust, keep a clear trail of where your money goes.</p></div>
+      <div class="section-intro"><h2>Less busywork.<br>More clarity.</h2><p>Your accounts, spending, and wealth in one place. Keep the ledger yourself and let AI help with the sorting.</p></div>
       <div class="feature-grid">
-        <article><span class="feature-icon lilac"><svg><use href="#i-sync"/></svg></span><h3>Your accounts, together.</h3><p>Sync supported bank and investment accounts through Plaid, or start with a manual account. Browse your history month by month.</p><span class="feature-detail">Bank sync &amp; manual entries</span></article>
-        <article><span class="feature-icon mint"><svg><use href="#i-spark"/></svg></span><h3>Categories that make sense.</h3><p>Let Codex suggest categories. Give it an example to find similar transactions, then review and apply the category you choose.</p><span class="feature-detail">AI-assisted classification</span></article>
-        <article><span class="feature-icon peach"><svg><use href="#i-list"/></svg></span><h3>The details stay yours.</h3><p>Split shared purchases, add notes, and correct a category. Your manual changes stay in place when you sync again.</p><span class="feature-detail">Review, edit &amp; split</span></article>
+        <article><span class="feature-icon lilac"><svg><use href="#i-wallet"/></svg></span><h3>Free to run.</h3><p>No Respect Money subscription or hosted account. Start with manual entries, then bring your own Plaid and Codex access when you want more automation.</p><span class="feature-detail">No app subscription</span></article>
+        <article><span class="feature-icon mint"><svg><use href="#i-spark"/></svg></span><h3>Let AI do the first pass.</h3><p>Codex helps classify transactions and infer countries from the available clues. Review the results in your ledger and keep your own decisions in place.</p><span class="feature-detail">Categories &amp; country suggestions</span></article>
+        <article><span class="feature-icon peach"><svg><use href="#i-split"/></svg></span><h3>Fix a pattern, together.</h3><p>Give the app an example of a misclassified payment. Preview similar records and apply your correction in a batch—even across thousands of eligible transactions.</p><span class="feature-detail">Example → preview → apply</span></article>
+        <article><span class="feature-icon blue"><svg><use href="#i-sync"/></svg></span><h3>Bring your banks along.</h3><p>Eligible Plaid Trial accounts can create up to 10 Production Items for free. One login can cover several accounts, leaving room for a personal banking setup.</p><span class="feature-detail">Checking, credit &amp; investments</span></article>
       </div>
+      <p class="feature-note">Plaid counts connections, called Items, rather than individual accounts or unique institutions. Eligibility and institution support apply; deleting an Item does not restore a Trial slot. <a href="https://support.plaid.com/hc/en-us/articles/39994173227159-What-is-the-Plaid-Trial-plan">Read Plaid’s Trial terms</a>. Codex access and any model-service charges are separate.</p>
     </section>
     <section class="ownership wrap" aria-labelledby="ownership-title">
-      <div class="ownership-copy"><span class="feature-icon blue"><svg><use href="#i-laptop"/></svg></span><h2 id="ownership-title">A home for your ledger.<br>On your own computer.</h2><p>Your transactions and settings live in a local SQLite database. Back it up, restore it, and keep your own history.</p><a class="text-link" href="https://github.com/gtxistxgao/respect-money/blob/main/docs/SQLITE_STORAGE.md">Read about data storage <span aria-hidden="true">↗</span></a></div>
-      <div class="data-flow"><div class="flow-source"><svg><use href="#i-sync"/></svg><span>Bank accounts<small>Optional Plaid sync</small></span></div><span class="flow-line" aria-hidden="true"></span><div class="flow-ledger"><span class="brand-mark"><svg><use href="#i-wallet"/></svg></span><span>Your local ledger<small>Transactions · categories · notes</small></span><span class="file-label">SQLite</span></div><span class="flow-line" aria-hidden="true"></span><div class="flow-source"><svg><use href="#i-spark"/></svg><span>AI classification<small>Optional Codex model connection</small></span></div><p>Local storage, with optional online services. AI classification sends selected transaction details to your configured model service.</p></div>
+      <div class="ownership-copy"><span class="feature-icon blue"><svg><use href="#i-laptop"/></svg></span><h2 id="ownership-title">Your ledger lives<br>where you do.</h2><p>The app and backend run on your computer. Your transactions, categories, notes, settings, and wealth history stay in your local database. Back it up on your terms; there is no Respect Money cloud storing your ledger.</p><a class="text-link" href="https://github.com/gtxistxgao/respect-money/blob/main/SECURITY.md">Read the privacy boundaries <span aria-hidden="true">↗</span></a></div>
+      <div class="data-flow"><div class="flow-source"><svg><use href="#i-sync"/></svg><span>Bank accounts<small>Optional online connection through Plaid</small></span></div><span class="flow-line" aria-hidden="true"></span><div class="flow-ledger"><span class="brand-mark"><img src="./assets/favicon.svg" width="34" height="34" alt=""></span><span>Your local ledger<small>Transactions · categories · notes</small></span><span class="file-label">SQLite</span></div><span class="flow-line" aria-hidden="true"></span><div class="flow-source"><svg><use href="#i-spark"/></svg><span>AI classification<small>Local Codex CLI → model service</small></span></div><p>When you use AI, selected transaction details and any rule examples are sent to your configured model service. AI processing is not fully offline. Manual bookkeeping works without Plaid or Codex.</p></div>
     </section>
     <section class="workflow wrap" id="how-it-works">
-      <div class="section-intro"><h2>A small routine.<br>A clearer picture.</h2><p>Import what happened, review what it means, and see your spending in context.</p></div>
-      <ol class="steps"><li><span class="step-number">1</span><h3>Bring in your transactions</h3><p>Connect an account or add an entry yourself. Choose the months you want to work with.</p></li><li><span class="step-number">2</span><h3>Make the categories yours</h3><p>Review suggestions, resolve uncertain entries, and teach the scan with your own examples.</p></li><li><span class="step-number">3</span><h3>See the month clearly</h3><p>Compare income and spending. Pick a category to get back to the transactions behind it.</p></li></ol>
+      <div class="section-intro"><h2>From setup<br>to a clearer ledger.</h2><p>Connect once, sync the months you need, and turn a pile of transactions into a picture you can understand.</p></div>
+      <ol class="steps">
+        <li><span class="step-number">1</span><h3>Create your Plaid account</h3><p><a href="https://dashboard.plaid.com/signup">Sign up with Plaid</a> and check Trial eligibility. The free plan supports up to 10 real bank connections for eligible developers in the US and Canada.</p></li>
+        <li><span class="step-number">2</span><h3>Start the app locally</h3><p>Install Node.js 24 or later, clone the project, and run the commands below. Open the local page in your browser. Use tmux if you want the service to keep running after closing the terminal.</p></li>
+        <li><span class="step-number">3</span><h3>Set up your connections</h3><p>In Settings, save your Plaid client ID and secret. Select Production for real accounts, including Trial. Install and sign in to the Codex CLI, then choose a model under Automatic classification.</p></li>
+        <li><span class="step-number">4</span><h3>Link your bank accounts</h3><p>Select Connect accounts and authorize your accounts in Plaid Link. Checking, credit, and investment accounts are identified automatically. Use Manage accounts to update an existing connection.</p></li>
+        <li><span class="step-number">5</span><h3>Sync and review</h3><p>In Accounting, select Sync bank data and choose a month, year, or date range. The app fetches available records from Plaid and uses Codex to classify new transactions. Use Reclassify to review and correct recurring mistakes in batches.</p></li>
+        <li><span class="step-number">6</span><h3>See the bigger picture</h3><p>Explore monthly cash flow in Overview, inspect your ledger in Accounting, and track assets, debts, and net worth in Wealth. Add manual assets and save balance snapshots over time.</p></li>
+      </ol>
     </section>
     <section class="getting-started wrap" id="get-started">
-      <div><h2>Your next month,<br>a little more organized.</h2><p>Run Respect Money locally with Node.js 24 or later. Manual bookkeeping works without Plaid credentials or Codex.</p><a class="button primary" href="https://github.com/gtxistxgao/respect-money#readme">Read the setup guide <svg><use href="#i-github"/></svg></a></div>
-      <div class="terminal"><div class="terminal-heading"><span>Get started locally</span><span>Terminal</span></div><pre><code><span class="command-comment"># Clone the project</span>
+      <div><h2>Your next month,<br>with less busywork.</h2><p>Start on your own computer with Node.js 24 or later. Manual bookkeeping works immediately; add your Plaid credentials and a signed-in Codex CLI when you are ready for bank sync and AI.</p><a class="button primary" href="https://github.com/gtxistxgao/respect-money#readme">Follow the full setup guide <svg><use href="#i-github"/></svg></a></div>
+      <div class="terminal"><div class="terminal-heading"><span>Run your own ledger</span><span>Terminal</span></div><pre><code><span class="command-comment"># Clone the project</span>
 git clone https://github.com/gtxistxgao/respect-money.git
 cd respect-money
 
-<span class="command-comment"># Install and start</span>
+<span class="command-comment"># Install, build, and start</span>
 npm ci
-npm run dev</code></pre><p>Then open <a href="http://127.0.0.1:5173">localhost:5173</a> in your browser.</p></div>
+npm run build
+npm start</code></pre><p>Then open <a href="http://127.0.0.1:3001">localhost:3001</a> in your browser. To switch the default Chinese interface to English, open Settings → Language.</p>
+        <details class="background-run"><summary>Keep it running with tmux</summary><p>On macOS or Linux, install tmux and stop the foreground app with Ctrl+C. From the same project directory, run:</p><pre><code>tmux new-session -d -s respect-money 'npm start'
+
+<span class="command-comment"># Return to the console</span>
+tmux attach-session -t respect-money</code></pre><p>Detach with Ctrl+B, then D. Stop the app with Ctrl+C while attached. Your computer must stay awake; tmux does not restart the app after a reboot.</p></details>
+      </div>
     </section>
-    <section class="faq wrap" aria-labelledby="faq-title"><h2 id="faq-title">A few things to know.</h2><div><details><summary>Do I need to connect a bank?</summary><p>No. You can create a manual account and start recording transactions immediately. Bank sync is optional and requires your own Plaid configuration; availability depends on your Plaid access and supported institutions.</p></details><details><summary>Does everything work offline?</summary><p>Manual bookkeeping uses your local database. Bank sync connects to Plaid, and AI classification uses your signed-in Codex model service. AI processing is not fully offline.</p></details><details><summary>What does the ledger track?</summary><p>Income and spending totals cover posted USD transactions, including cash dividends, interest, and standalone investment fees. Transfers, credit card repayments, and securities trades stay out of those totals. Portfolio profit and loss is not included.</p></details><details><summary>Is this a hosted finance app?</summary><p>No. This page introduces the project. The application runs on your computer for a single local user; it is not designed for public internet hosting.</p></details></div></section>
+    <section class="faq wrap" aria-labelledby="faq-title">
+      <h2 id="faq-title">A few things to know.</h2>
+      <div>
+        <details><summary>What is free?</summary><p>Respect Money has no app subscription. Eligible Plaid Trial accounts can create up to 10 Production Items at no cost. Codex uses your own account and model access, so its usage limits and any service charges still apply. You can use manual bookkeeping without either service.</p></details>
+        <details><summary>Does Plaid’s limit mean 10 banks?</summary><p>The limit is 10 Items. An Item represents one login at one financial institution and may include several accounts, such as checking and savings. Separate logins or duplicate connections can use additional Items, and deleting one does not restore a Trial slot. Eligibility, legacy account terms, and institution access can differ. See <a href="https://support.plaid.com/hc/en-us/articles/16194695660311-Can-I-use-Plaid-for-free">Plaid’s free-access guide</a> and <a href="https://plaid.com/docs/quickstart/glossary/#item">Item definition</a>.</p></details>
+        <details><summary>Does everything stay on my computer?</summary><p>Your saved ledger and settings live locally. Bank sync contacts Plaid, and AI classification sends selected transaction details and rule examples through your local Codex CLI to its model service. AI inference is not fully offline. Local databases and backups also contain unencrypted financial data and credentials, so keep them private.</p></details>
+        <details><summary>Can I fix thousands of wrong categories?</summary><p>Reclassify scans eligible transactions across enabled accounts in batches. Supply an example or pattern, choose a category and cash flow direction, review the matches, and apply your correction to the selected records. This replaces repetitive row-by-row editing while keeping you in control. Rules run only when explicitly scanned; applying a correction can replace an earlier manual category.</p></details>
+        <details><summary>Do I need Codex? Can I use an open-source model?</summary><p>The current AI workflow requires a working, signed-in Codex CLI. Follow the <a href="https://learn.chatgpt.com/docs/codex/cli">official installation guide</a>, then select a model in Settings. Testing open-source models, including local inference, is on the roadmap with the aim of reducing that dependency. It is not a feature of this release.</p></details>
+        <details><summary>Does the app sync automatically in the background?</summary><p>Connecting an account starts an initial sync from January 1, 2026 through today. After that, you choose when to sync and which dates to request. Jobs continue if you close the browser while the backend stays running. Available history and freshness depend on the provider; this release does not schedule recurring bank polling.</p></details>
+        <details><summary>What do Accounting and Wealth track?</summary><p>Accounting totals cover posted USD income and spending, including cash dividends, interest, and standalone investment fees. Transfers, repayments, and securities trades stay out of those totals. Wealth brings together USD balances, manual assets, debts, and daily balance snapshots. Portfolio profit and loss is not included.</p></details>
+        <details><summary>Is this a hosted finance app?</summary><p>This page introduces the project and uses fictional sample data. The application runs on your computer for a single local user. It has no public login or multi-user isolation and is not designed for public internet hosting.</p></details>
+      </div>
+    </section>
   </main>
-  <footer class="site-footer wrap"><a class="brand" href="./"><span class="brand-mark"><svg><use href="#i-wallet"/></svg></span>respect money<span class="brand-dot">.</span></a><p>A little clarity for your everyday money.</p><a href="https://github.com/gtxistxgao/respect-money">Find the project on GitHub <svg><use href="#i-github"/></svg></a></footer>
+  <footer class="site-footer wrap"><a class="brand" href="./"><span class="brand-mark"><img src="./assets/favicon.svg" width="34" height="34" alt=""></span>respect money<span class="brand-dot">.</span></a><p>Your money. Your machine. Less busywork.</p><a href="https://github.com/gtxistxgao/respect-money">Find the project on GitHub <svg><use href="#i-github"/></svg></a></footer>
 </body>
 </html>
