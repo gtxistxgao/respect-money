@@ -107,13 +107,14 @@ h1 { font-size: clamp(48px, 6vw, 76px); line-height: 1.09; font-weight: 650; let
 .site-footer .brand-mark { width: 28px; height: 28px; border-radius: 8px; }
 .site-footer svg { width: 16px; height: 16px; }
 .site-footer p { font-size: 11px; color: var(--muted); }
+.site-footer p a { text-decoration: underline; text-underline-offset: 3px; }
+.site-footer p a:hover { color: var(--accent); }
 .site-footer > a:last-child { display: flex; align-items: center; gap: 8px; font-size: 11px; }
 @media (max-width: 900px) {
   .wrap { width: calc(100% - 40px); }
   .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; }
   .ownership { padding: 32px; gap: 32px; }
   .getting-started, .faq { gap: 36px; }
-  .site-footer p { display: none; }
 }
 @media (max-width: 640px) {
   .wrap { width: calc(100% - 32px); }
