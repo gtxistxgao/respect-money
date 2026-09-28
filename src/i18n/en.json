@@ -722,5 +722,6 @@
   "Show estimated values in another currency.": "Show estimated values in another currency.",
   "Enable currency conversion": "Enable currency conversion",
   "1 USD = {rate} {currency}": "1 USD = {rate} {currency}",
-  "Approx. {amount} {currency}": "Approx. {amount} {currency}"
+  "Approx. {amount} {currency}": "Approx. {amount} {currency}",
+  "Provider changes are saved automatically. Save other changes with Save settings.": "Provider changes are saved automatically. Save other changes with Save settings."
 }

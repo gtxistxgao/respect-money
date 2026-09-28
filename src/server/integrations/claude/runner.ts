@@ -6,8 +6,9 @@ import { message as t, LocalizedError } from '../../../i18n/index.js';
 import type { CodexOptions } from '../codex/runner.js';
 
 export function claudeEnvironment() {
+  // macOS Keychain lookup uses USER to locate the signed-in CLI credentials.
   const environment: NodeJS.ProcessEnv = {};
-  for (const key of ['PATH', 'HOME', 'CLAUDE_CONFIG_DIR', 'TMPDIR', 'LANG', 'LC_ALL', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'NODE_EXTRA_CA_CERTS', 'ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN']) {
+  for (const key of ['PATH', 'HOME', 'USER', 'LOGNAME', 'CLAUDE_CONFIG_DIR', 'TMPDIR', 'LANG', 'LC_ALL', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'NODE_EXTRA_CA_CERTS', 'ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN']) {
     if (process.env[key]) environment[key] = process.env[key];
   }
   return environment;

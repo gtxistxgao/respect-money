@@ -722,5 +722,6 @@
   "Show estimated values in another currency.": "使用其他币种显示估算金额。",
   "Enable currency conversion": "启用货币折算",
   "1 USD = {rate} {currency}": "1 美元 = {rate} {currency}",
-  "Approx. {amount} {currency}": "约 {amount} {currency}"
+  "Approx. {amount} {currency}": "约 {amount} {currency}",
+  "Provider changes are saved automatically. Save other changes with Save settings.": "服务提供方切换后自动保存。其他修改请点击“保存设置”。"
 }

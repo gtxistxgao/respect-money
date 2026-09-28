@@ -71,11 +71,47 @@ test('switches AI providers and retains independent models across saves and relo
     await page.locator('#classification').screenshot({ path: testInfo.outputPath('claude-settings-mobile.png'), animations: 'disabled' });
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
     await selectOption(provider, 'codex');
+    await expect(provider).toHaveAttribute('data-value', 'codex');
     await expect(model).toHaveAttribute('data-value', initial.codexModel);
-    await save.click(); await expect(save).toBeDisabled();
+    await expect(save).toBeDisabled();
     expect(errors).toEqual([]);
   } finally {
     const current = await (await page.request.get('/api/settings')).json();
     expect((await page.request.put('/api/settings', { data: { revision: current.revision, classificationProvider: initial.classificationProvider, claudeModel: initial.claudeModel } })).ok()).toBe(true);
+  }
+});
+
+test('saves provider selection immediately across tab navigation without saving unrelated drafts', async ({ page, request }) => {
+  const initial = await (await request.get('/api/settings')).json();
+  const provider = page.getByRole('combobox', { name: tr('Classification provider'), exact: true });
+  const prompt = page.getByLabel(tr('Transaction classification prompt'), { exact: true });
+  const save = page.locator('#classification').getByRole('button', { name: tr('Save settings'), exact: true });
+  try {
+    await page.goto('/settings#classification');
+    await prompt.fill(initial.classificationPrompt + '\nUnsaved fixture draft.');
+    await selectOption(provider, 'claude');
+    await expect(provider).toHaveAttribute('data-value', 'claude');
+    expect((await (await request.get('/api/settings')).json()).classificationPrompt).toBe(initial.classificationPrompt);
+    await expect(prompt).toHaveValue(initial.classificationPrompt + '\nUnsaved fixture draft.');
+    // The provider save advances the draft revision so later explicit saves succeed.
+    await save.click(); await expect(save).toBeDisabled();
+    await selectOption(provider, 'codex'); await expect(provider).toHaveAttribute('data-value', 'codex');
+    await selectOption(provider, 'claude');
+    await page.getByRole('navigation', { name: tr('Main navigation') }).getByRole('link', { name: tr('Wealth'), exact: true }).click();
+    await page.locator('.rail-footer').getByRole('link', { name: tr('Settings'), exact: true }).click();
+    await expect(provider).toHaveAttribute('data-value', 'claude');
+    await page.reload(); await expect(provider).toHaveAttribute('data-value', 'claude');
+    expect((await (await request.get('/api/settings')).json()).classificationProvider).toBe('claude');
+    await page.route('**/api/settings', async route => {
+      if (route.request().method() === 'PUT') await route.fulfill({ status: 409, json: { error: 'Fixture settings conflict' } });
+      else await route.continue();
+    });
+    await selectOption(provider, 'codex');
+    await expect(page.getByText('Fixture settings conflict', { exact: true })).toBeVisible();
+    await expect(provider).toHaveAttribute('data-value', 'claude');
+    expect((await (await request.get('/api/settings')).json()).classificationProvider).toBe('claude');
+  } finally {
+    const current = await (await request.get('/api/settings')).json();
+    expect((await request.put('/api/settings', { data: { revision: current.revision, classificationProvider: initial.classificationProvider, classificationPrompt: initial.classificationPrompt } })).ok()).toBe(true);
   }
 });

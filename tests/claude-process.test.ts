@@ -18,10 +18,12 @@ const success = (structured_output: unknown) => JSON.stringify({ type: 'result',
 
 it('disables tools and customizations while retaining only explicit CLI authentication variables', () => {
   vi.stubEnv('PLAID_SECRET', 'synthetic-private'); vi.stubEnv('UNRELATED_SECRET', 'synthetic-private');
+  vi.stubEnv('USER', 'fixture-user'); vi.stubEnv('LOGNAME', 'fixture-user');
   vi.stubEnv('ANTHROPIC_API_KEY', 'synthetic-api-key'); vi.stubEnv('CLAUDE_CODE_OAUTH_TOKEN', 'synthetic-token');
   try {
     const env = claudeEnvironment();
     expect(env).not.toHaveProperty('PLAID_SECRET'); expect(env).not.toHaveProperty('UNRELATED_SECRET');
+    expect(env.USER).toBe('fixture-user'); expect(env.LOGNAME).toBe('fixture-user');
     expect(env.ANTHROPIC_API_KEY).toBe('synthetic-api-key'); expect(env.CLAUDE_CODE_OAUTH_TOKEN).toBe('synthetic-token');
     const args = claudeArguments({ type: 'object' }, { bin: 'claude', timeoutMs: 1000 });
     for (const flag of ['--safe-mode', '--no-session-persistence', '--strict-mcp-config', '--disable-slash-commands']) expect(args).toContain(flag);
@@ -34,11 +36,12 @@ it('disables tools and customizations while retaining only explicit CLI authenti
 
 it('passes the prompt over stdin, extracts structured output and removes its working directory', async () => {
   const fixture = await executable(`let input = ''; process.stdin.on('data', b => input += b); process.stdin.on('end', () => {
+    if (!process.env.USER || !process.env.LOGNAME) process.exit(1);
     const output = { input, cwd: process.cwd(), args: process.argv.slice(2), leaked: process.env.PLAID_SECRET || null };
     const bytes = Buffer.from(JSON.stringify({ type: 'result', subtype: 'success', is_error: false, structured_output: output }));
     for (const byte of bytes) process.stdout.write(Buffer.from([byte]));
   });`);
-  vi.stubEnv('PLAID_SECRET', 'synthetic-private');
+  vi.stubEnv('PLAID_SECRET', 'synthetic-private'); vi.stubEnv('USER', 'fixture-user'); vi.stubEnv('LOGNAME', 'fixture-user');
   try {
     const result = await runClaude('fictional caf\u00e9 data', { type: 'object' }, { bin: fixture.bin, timeoutMs: 3000, model: 'sonnet' }) as { input: string; cwd: string; args: string[]; leaked: unknown };
     expect(result.input).toBe('fictional caf\u00e9 data'); expect(result.leaked).toBeNull();

@@ -18,12 +18,14 @@ export function useConfiguration() {
     setDraft((current) => ({ revision: current?.revision ?? query.data!.revision, patch: { ...current?.patch, ...patch } }));
     setSaved(false); setError(undefined);
   };
-  const save = async () => {
-    if (!draft) return;
+  const save = async (immediatePatch?: Patch) => {
+    if (!query.data || (!draft && !immediatePatch)) return;
     setSaving(true); setError(undefined);
     try {
-      const value = await api<PublicSettings>('/settings', { method: 'PUT', body: JSON.stringify({ ...draft.patch, revision: draft.revision }) });
-      queryClient.setQueryData(['configuration'], value); setDraft(undefined); setSaved(true);
+      const value = await api<PublicSettings>('/settings', { method: 'PUT', body: JSON.stringify({ ...(immediatePatch ?? draft!.patch), revision: draft?.revision ?? query.data.revision }) });
+      await queryClient.cancelQueries({ queryKey: ['configuration'] });
+      queryClient.setQueryData(['configuration'], value);
+      setDraft(current => immediatePatch && current ? { ...current, revision: value.revision } : undefined); setSaved(true);
       await Promise.all([queryClient.invalidateQueries({ queryKey: ['status'] }), queryClient.invalidateQueries({ queryKey: ['models'] }), queryClient.invalidateQueries({ queryKey: ['wealth'] })]);
     } catch (error) { setError(error); }
     finally { setSaving(false); }
@@ -61,7 +63,8 @@ export function ConfigurationFields({ config, section, busy }: { config: Configu
     {values.hasPlaidSecret && <label className="configuration-checkbox"><input type="checkbox" checked={Boolean(config.draft?.patch.clearPlaidSecret)} onChange={(event) => config.update({ clearPlaidSecret: event.target.checked, plaidSecret: '' })} />{t('Remove the saved Plaid secret')}</label>}
     <p className="muted small">{t('Use the environment matching your keys. Existing bank connections are tied to their environment and client ID.')}</p></>}
     {section === 'classification' && <>
-      <label>{t('Classification provider')}<Select value={provider} onValueChange={(value) => { config.update({ classificationProvider: value as 'codex' | 'claude' }); setCustomModel(false); }}><option value="codex">Codex</option><option value="claude">Claude Code</option></Select></label>
+      <label>{t('Classification provider')}<Select value={provider} onValueChange={(value) => { void config.save({ classificationProvider: value as 'codex' | 'claude' }); setCustomModel(false); }}><option value="codex">Codex</option><option value="claude">Claude Code</option></Select></label>
+      <p className="muted small">{t('Provider changes are saved automatically. Save other changes with Save settings.')}</p>
       <label>{t('Classification model')}<Select value={customModel ? '__manual_model__' : modelValue} onValueChange={(nextValue) => {
         const manual = nextValue === '__manual_model__'; setCustomModel(manual);
         if (!manual) updateModel(nextValue);
