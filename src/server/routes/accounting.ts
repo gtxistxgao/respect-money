@@ -1,7 +1,7 @@
 import { message as t } from "../../i18n/index.js";
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { categories, canonicalCategory, dateSchema, isAwaitingReview, manualAccountInput, manualTransactionInput, monthSchema, overrideInput, splitsInput, today, type LedgerRow } from '../../shared/models.js';
+import { categories, canonicalCategory, dateSchema, isAwaitingReview, manualAccountInput, manualTransactionInput, monthSchema, nonCashflowCategoryKind, overrideInput, splitsInput, today, type LedgerRow } from '../../shared/models.js';
 import { AppError, cents, normalize } from '../domain/ledger.js';
 import type { Repository } from '../storage/repository.js';
 import { duplicateCandidates } from '../domain/duplicates.js';
@@ -92,8 +92,8 @@ export async function accountingRoutes(app: FastifyInstance, repository: Reposit
     const effective = state.processed.find((row) => row.parentId === id && !row.splitId);
     const saved = state.classifications[id];
     const classification = saved?.sourceHash === source.sourceHash ? saved : undefined;
-    // Editors retain the underlying kind so saving a transfer never reverses its cashflow.
-    const editableKind = effective?.category === 'internal_transfer' ? source.source === 'manual' ? source.kind : state.overrides[id]?.kind ?? classification?.kind ?? source.kind : undefined;
+    // Editors retain the underlying kind so saving excluded activities never reverses their cashflow.
+    const editableKind = effective && nonCashflowCategoryKind(effective.category) ? source.source === 'manual' ? source.kind : state.overrides[id]?.kind ?? classification?.kind ?? source.kind : undefined;
     const { raw: _raw, ...transaction } = source;
     void _raw;
     return { transaction: { ...transaction, ...(effective?.sourceHash === source.sourceHash ? { kind: effective.kind === 'excluded' ? source.kind : effective.kind, category: effective.category, country: effective.country } : {}) }, editableKind, override: state.overrides[id], version: repository.version(state, id), reason: effective?.reason || '', classificationSource: effective?.classificationSource || 'rules' };

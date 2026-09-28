@@ -3,7 +3,8 @@ import { translate } from '../../src/i18n/index.js';
 const tr = (key: string, params?: Record<string, string | number>) => translate('zh', key, params);
 import { expect, test } from '@playwright/test';
 
-test('marks income, expenses and review rows as internal transfers and handles editing and split portions', async ({ page, request }) => {
+for (const [category, activityKind] of [['internal_transfer', 'transfer'], ['investment_transaction', 'investment']] as const) {
+test(`marks income, expenses and review rows as ${category} and handles editing and split portions`, async ({ page, request }) => {
   const errors: string[] = []; page.on('pageerror', (error) => errors.push(error.message));
   const account = await (await request.post('/api/accounts/manual', { data: { name: 'Internal transfer fixture', institution: 'Test', type: 'checking' } })).json();
   const ids: Record<string, string> = {};
@@ -16,15 +17,15 @@ test('marks income, expenses and review rows as internal transfers and handles e
   }
   await page.goto(`/?month=2026-06&accounts=${account.id}`);
   await expect(page.getByRole('button', { name: new RegExp(tr("Total spending")) })).toContainText('$100.00');
-  await selectOption(page.getByRole('combobox', { name: tr("Change category for {p0}", { p0: "Outgoing transfer" }), exact: true }), 'internal_transfer');
+  await selectOption(page.getByRole('combobox', { name: tr("Change category for {p0}", { p0: "Outgoing transfer" }), exact: true }), category);
   await expect(page.locator('tbody tr')).toHaveCount(0);
   await expect(page.getByRole('button', { name: new RegExp(tr("Total spending")) })).toContainText('$0.00');
   await page.getByRole('button', { name: new RegExp(tr("Total income")) }).click();
-  await selectOption(page.getByRole('combobox', { name: tr("Change category for {p0}", { p0: "Incoming transfer" }), exact: true }), 'internal_transfer');
+  await selectOption(page.getByRole('combobox', { name: tr("Change category for {p0}", { p0: "Incoming transfer" }), exact: true }), category);
   await expect(page.locator('tbody tr')).toHaveCount(0);
   await expect(page.getByRole('button', { name: new RegExp(tr("Total income")) })).toContainText('$0.00');
   await page.getByRole('button', { name: new RegExp("^" + tr("Needs review")) }).click();
-  await selectOption(page.getByRole('combobox', { name: tr("Change category for {p0}", { p0: "Unconfirmed transfer" }), exact: true }), 'internal_transfer');
+  await selectOption(page.getByRole('combobox', { name: tr("Change category for {p0}", { p0: "Unconfirmed transfer" }), exact: true }), category);
   await expect(page.locator('tbody tr')).toHaveCount(0);
   await page.getByRole('button', { name: tr("All transactions"), exact: true }).click();
   await expect(page.locator('tbody tr')).toHaveCount(3);
@@ -33,13 +34,13 @@ test('marks income, expenses and review rows as internal transfers and handles e
   await expect(page.locator('tbody').getByText(tr("Excluded from income and spending"), { exact: true })).toHaveCount(3);
 
   await page.getByRole('button', { name: tr("Edit {p0}", { p0: "Incoming transfer" }), exact: true }).click();
-  await expect(page.getByLabel(tr("Categories"), { exact: true })).toHaveAttribute('data-value', 'internal_transfer');
+  await expect(page.getByLabel(tr("Categories"), { exact: true })).toHaveAttribute('data-value', category);
   await page.getByLabel(tr("Notes (optional)")).fill('Keep incoming direction');
   await page.getByRole('button', { name: tr("Save transaction"), exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.reload();
   const incoming = await (await request.get(`/api/transactions/${ids['Incoming transfer']}`)).json();
-  expect(incoming.transaction).toMatchObject({ kind: 'transfer', cashflowCents: 7500, category: 'internal_transfer', notes: 'Keep incoming direction' });
+  expect(incoming.transaction).toMatchObject({ kind: activityKind, cashflowCents: 7500, category: category, notes: 'Keep incoming direction' });
   const selector = page.getByRole('combobox', { name: tr("Change category for {p0}", { p0: "Incoming transfer" }), exact: true });
   await selectOption(selector, 'salary');
   await expect(selector).toBeEnabled();
@@ -58,7 +59,7 @@ test('marks income, expenses and review rows as internal transfers and handles e
   await selectOption(transferPart, 'childcare');
   await expect(transferPart).toBeEnabled();
   await expect(page.getByRole('button', { name: new RegExp(tr("Total spending")) })).toContainText('$100.00');
-  await selectOption(transferPart, 'internal_transfer');
+  await selectOption(transferPart, category);
   await expect(transferPart).toBeEnabled();
   await page.getByRole('button', { name: new RegExp(tr("Total spending")) }).click();
   await expect(page.locator('tbody tr')).toHaveCount(1);
@@ -66,6 +67,7 @@ test('marks income, expenses and review rows as internal transfers and handles e
   const overview = await (await request.get(`/api/accounting/overview?accounts=${account.id}`)).json();
   expect(overview.months[0]).toMatchObject({ incomeCents: 7500, expenseCents: 3000, reviewCount: 0, categories: [{ category: 'dining', expenseCents: 3000, refundCents: 0 }] });
   await page.getByRole('button', { name: tr("All transactions"), exact: true }).click();
-  await page.locator('.transaction-table').screenshot({ path: 'test-results/internal-transfers-desktop.png', animations: 'disabled' });
+  await page.locator('.transaction-table').screenshot({ path: `test-results/${category}-desktop.png`, animations: 'disabled' });
   expect(errors).toEqual([]);
 });
+}

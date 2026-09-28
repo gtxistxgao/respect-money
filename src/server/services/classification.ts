@@ -1,5 +1,5 @@
 import { message as t, LocalizedError } from "../../i18n/index.js";
-import { type DateRange, type SourceTransaction } from '../../shared/models.js';
+import { nonCashflowCategoryKind, type DateRange, type SourceTransaction } from '../../shared/models.js';
 import { hash, inRanges, normalize } from '../domain/ledger.js';
 import { CLASSIFIER_VERSION, toClassificationInput, validateClassifications, type ClassifyBatch, type ClassificationInput } from '../integrations/codex/classifier.js';
 import type { Repository } from '../storage/repository.js';
@@ -24,7 +24,7 @@ export class ClassificationService {
     const candidates = sources.filter((tx) => {
       const override = snapshot.overrides[tx.id];
       const reclassify = force && (!range || inRanges(tx.postedDate, [range]));
-      if (override?.excluded || override?.duplicateOf || override?.splits?.length || override?.category === 'internal_transfer' || (override?.kind && override.category && override.country)) return false;
+      if (override?.excluded || override?.duplicateOf || override?.splits?.length || (override?.category && nonCashflowCategoryKind(override.category)) || (override?.kind && override.category && override.country)) return false;
       if (!reclassify && override?.category && override.category !== 'uncategorized') return false;
       const cache = snapshot.classifications[tx.id];
       // Classification belongs to the transaction identity. Ordinary sync only classifies uncached work.

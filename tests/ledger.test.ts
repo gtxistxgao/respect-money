@@ -95,6 +95,7 @@ describe('ledger invariants', () => {
     ]);
     expect(summarize(rows)).toMatchObject({ incomeCents: 6000, expenseCents: 500 });
     expect(rows.find((row) => row.sourceId === 'auto-dividend')?.kind).toBe('reinvestment');
+    expect(rows.find((row) => row.sourceId === 'buy')).toMatchObject({ kind: 'investment', category: 'investment_transaction', needsReview: false });
   });
   it('does not guess a reinvestment match when security identity is missing', () => {
     const investment = (id: string, amount: number, subtype: string): RawRecord => ({ accountId: account.id, source: 'plaid_investments', payload: { investment_transaction_id: id, date: '2026-08-15', amount, type: subtype === 'dividend' ? 'cash' : 'buy', subtype, security_id: null, name: 'Test activity', iso_currency_code: 'USD' } });

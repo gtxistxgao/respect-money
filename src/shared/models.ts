@@ -6,7 +6,7 @@ export const categoryOptions = [
   ['shopping', "Shopping"], ['health', "Health"], ['childcare', "Childcare"], ['entertainment', "Entertainment"], ['travel', "Travel"],
   ['side_business_expenses', "Side business expenses"],
   ['salary', "Salary"], ['investments', "Investments"], ['interest', "Interest"], ['dividends', "Dividends"],
-  ['internal_transfer', "Internal transfer"], ['uncategorized', "Uncategorized"],
+  ['investment_transaction', "Investment transaction"], ['internal_transfer', "Internal transfer"], ['uncategorized', "Uncategorized"],
 ] as const;
 export const categories = categoryOptions.map(([id]) => id);
 // Accept historical IDs at input boundaries; expose only the merged category.
@@ -17,9 +17,13 @@ export const countryOptions = [['US', "United States"], ['CN', "China"], ['JP', 
 export const countrySchema = z.string().regex(/^[A-Z]{2}$/);
 export const kindSchema = z.enum(['income', 'expense', 'refund', 'transfer', 'payment', 'investment', 'reinvestment', 'excluded', 'review']);
 export type TransactionKind = z.infer<typeof kindSchema>;
+export function nonCashflowCategoryKind(category: Category): 'transfer' | 'investment' | undefined {
+  if (category === 'internal_transfer') return 'transfer';
+  if (category === 'investment_transaction') return 'investment';
+}
 export function confirmedCategoryKind(kind: TransactionKind, category: Category, cashflowCents: number): TransactionKind {
   if (kind !== 'review' || category === 'uncategorized' || !cashflowCents) return kind;
-  if (category === 'internal_transfer') return cashflowCents < 0 ? 'expense' : 'income';
+  if (nonCashflowCategoryKind(category)) return cashflowCents < 0 ? 'expense' : 'income';
   if (cashflowCents < 0) return 'expense';
   return ['salary', 'investments', 'interest', 'dividends'].includes(category) ? 'income' : 'refund';
 }

@@ -10,7 +10,7 @@ import { resetTableFilters } from '../accounting/filters.js';
 const colors: Record<Category, string> = {
   dining: '#d9a441', groceries: '#3fb950', housing: '#b4a4e8', transport: '#79b8ed',
   shopping: '#c4adfa', health: '#f4635b', childcare: '#f6b5a6', entertainment: '#73cabe', travel: '#56c6f6',
-  side_business_expenses: '#8bb8f0', salary: '#6fc666', investments: '#88d6b0', interest: '#b5e6fb', dividends: '#e27dd7', internal_transfer: '#92929f', uncategorized: '#acacb9',
+  side_business_expenses: '#8bb8f0', salary: '#6fc666', investments: '#88d6b0', interest: '#b5e6fb', dividends: '#e27dd7', investment_transaction: '#92929f', internal_transfer: '#92929f', uncategorized: '#acacb9',
 };
 export const percentage = (ratio: number) => new Intl.NumberFormat(intlLocale(), { style: 'percent', maximumFractionDigits: 1 }).format(ratio);
 export const monthLabel = formatMonth;

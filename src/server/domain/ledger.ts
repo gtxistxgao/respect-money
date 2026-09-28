@@ -1,7 +1,7 @@
 import { message as t, LocalizedError } from "../../i18n/index.js";
 import { createHash } from 'node:crypto';
 import Decimal from 'decimal.js';
-import { categorySchema, confirmedCategoryKind, dateSchema, isAwaitingReview, kindSchema, type Account, type Classification, type DateRange, type LedgerRow, type RawRecord, type SourceTransaction, type Summary, type TransactionOverride } from '../../shared/models.js';
+import { categorySchema, confirmedCategoryKind, dateSchema, isAwaitingReview, kindSchema, nonCashflowCategoryKind, type Account, type Classification, type DateRange, type LedgerRow, type RawRecord, type SourceTransaction, type Summary, type TransactionOverride } from '../../shared/models.js';
 
 export class AppError extends LocalizedError {
   constructor(message: string, public statusCode = 400) { super(message); }
@@ -46,7 +46,7 @@ export function normalize(record: RawRecord): SourceTransaction {
     removed ||= type === 'cancel';
     kind = 'review';
     if (subtype.includes('reinvestment')) kind = 'reinvestment';
-    else if (['buy', 'sell'].includes(type)) kind = 'investment';
+    else if (['buy', 'sell'].includes(type)) { kind = 'investment'; category = 'investment_transaction'; }
     else if (type === 'transfer' || ['contribution', 'deposit', 'withdrawal', 'transfer', 'return of principal'].includes(subtype)) kind = 'transfer';
     else if (type === 'fee') { kind = 'expense'; category = 'investments'; }
     else if (subtype === 'interest' && cashflowCents >= 0) { kind = 'income'; category = 'interest'; }
@@ -131,8 +131,8 @@ export function createLedger(
     if (categoryConfirmed && kind === 'review') kind = confirmedCategoryKind(tx.kind, category, tx.cashflowCents);
     if (!override?.kind && ownTransfers.has(tx.id)) kind = 'transfer';
     if (!override?.kind && reinvestmentDecision.has(tx.id)) kind = reinvestmentDecision.get(tx.id)!;
-    // Derive the transfer kind without overwriting the original income/expense/refund direction.
-    if (category === 'internal_transfer' && kind !== 'excluded') kind = 'transfer';
+    // Derive excluded activities without overwriting the original income/expense/refund direction.
+    if (kind !== 'excluded') kind = nonCashflowCategoryKind(category) ?? kind;
     const signMismatch = (kind === 'income' && tx.cashflowCents < 0) || (kind === 'expense' && tx.cashflowCents > 0) || (kind === 'refund' && tx.cashflowCents < 0);
     const invalidSplits = Boolean(override?.splits?.length && override.splits.reduce((sum, split) => sum + split.cashflowCents, 0) !== tx.cashflowCents);
     const counterpart = override?.duplicateOf ? sources.get(override.duplicateOf) : undefined;
@@ -148,7 +148,7 @@ export function createLedger(
       accountName: account.name, accountMask: account.mask, institution: account.institution,
       version: `${tx.sourceHash}:${override?.revision || 0}`, parentId: tx.id,
       splitCount: override?.splits?.length || 0,
-      needsReview: kind === 'review' || (category !== 'internal_transfer' && !categoryConfirmed && override?.kind === undefined && !ownTransfers.has(tx.id) && Boolean(classification?.needsReview)),
+      needsReview: kind === 'review' || (!nonCashflowCategoryKind(category) && !categoryConfirmed && override?.kind === undefined && !ownTransfers.has(tx.id) && Boolean(classification?.needsReview)),
       reason: brokenMatch ? t("The linked bank transaction was removed or changed. Review the manual entry.") : invalidSplits ? t("The source amount changed. Review the split amounts.") : reinvestmentDecision.get(tx.id) === 'review' ? t("This may be an automatic reinvestment. Confirm whether cash was actually received.") : classification?.reason || '',
       classificationSource: tx.source === 'manual' && tx.category !== 'uncategorized' || override && (override.kind || override.category || override.country) ? 'manual' : classification ? classification.provider ?? 'codex' : 'rules',
       notes: override?.notes ?? tx.notes, excluded, duplicateOf: override?.duplicateOf,
@@ -156,7 +156,7 @@ export function createLedger(
     } as LedgerRow;
     if (override?.splits?.length && !invalidSplits && !excluded && !brokenMatch && !signMismatch) {
       for (const split of override.splits) rows.push({ ...row, ...split, id: `${tx.id}:${split.id}`, parentId: tx.id, splitId: split.id,
-        description: split.description || row.description, kind: split.category === 'internal_transfer' && split.kind !== 'excluded' ? 'transfer' : split.kind, countrySource: 'manual',
+        description: split.description || row.description, kind: split.kind === 'excluded' ? 'excluded' : nonCashflowCategoryKind(split.category) ?? split.kind, countrySource: 'manual',
         classificationSource: 'manual', excluded: split.kind === 'excluded', needsReview: false });
     } else rows.push(row);
   }

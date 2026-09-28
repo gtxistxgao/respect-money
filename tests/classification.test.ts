@@ -120,25 +120,29 @@ it('rejects missing, duplicate, extra or amount-changing outputs and defaults un
     expect(() => validateClassifications({ classifications: [{ ...row, category: 'internal_transfer', kind: 'transfer', needsReview: true }] }, input)).toThrow();
     expect(validateClassifications({ classifications: [{ ...row, category: 'internal_transfer', kind: 'transfer' }] }, input)[0].kind).toBe('transfer');
     expect(() => validateClassifications({ classifications: [{ ...row, category: 'internal_transfer', kind: 'transfer' }] }, [{ ...input[0], source: 'manual', suggestedKind: 'expense' }])).toThrow();
+    expect(() => validateClassifications({ classifications: [{ ...row, category: 'investment_transaction' }] }, input)).toThrow();
+    expect(() => validateClassifications({ classifications: [{ ...row, category: 'investment_transaction', kind: 'investment', needsReview: true }] }, input)).toThrow();
+    expect(validateClassifications({ classifications: [{ ...row, category: 'investment_transaction', kind: 'investment' }] }, input)[0].category).toBe('investment_transaction');
+    expect(() => validateClassifications({ classifications: [{ ...row, category: 'investment_transaction', kind: 'investment' }] }, [{ ...input[0], source: 'manual', suggestedKind: 'income' }])).toThrow();
     const service = new ClassificationService(f.repository, async (inputs) => ({ classifications: response(inputs).classifications.map((row) => ({ ...row, country: null })) }), 'test');
     await service.publish([f.account.id], false, progress);
     expect(f.repository.snapshot().processed[0]).toMatchObject({ country: 'US', countrySource: 'default' });
   } finally { await f.close(); }
 });
 
-it('keeps a manually confirmed internal transfer out of review and protects it during reclassification and bank updates', async () => {
+it.each([['internal_transfer', 'transfer'], ['investment_transaction', 'investment']] as const)('keeps a manually confirmed %s out of review and protects it during reclassification and bank updates', async (category, kind) => {
   const f = await fixture(); const id = transactionId(f.records[0]);
   try {
     const classify = vi.fn(async (inputs: ClassificationInput[]) => ({ classifications: response(inputs).classifications.map((row) => ({ ...row, kind: 'review', needsReview: true })) }));
     const service = new ClassificationService(f.repository, classify, 'test');
     await service.publish([f.account.id], false, progress);
     expect(f.repository.snapshot().processed[0].needsReview).toBe(true);
-    await f.repository.editOverride(id, f.repository.version(f.repository.snapshot(), id), { category: 'internal_transfer' });
-    expect(f.repository.snapshot().processed[0]).toMatchObject({ kind: 'transfer', needsReview: false });
+    await f.repository.editOverride(id, f.repository.version(f.repository.snapshot(), id), { category });
+    expect(f.repository.snapshot().processed[0]).toMatchObject({ kind, needsReview: false });
     await f.repository.importRecords([{ ...f.records[0], payload: { ...f.records[0].payload, amount: 20 } }], {});
     await service.publish([f.account.id], true, progress);
     expect(classify).toHaveBeenCalledTimes(1);
-    expect(f.repository.snapshot().processed[0]).toMatchObject({ kind: 'transfer', category: 'internal_transfer', needsReview: false, cashflowCents: -2000, classificationSource: 'manual' });
+    expect(f.repository.snapshot().processed[0]).toMatchObject({ kind, category, needsReview: false, cashflowCents: -2000, classificationSource: 'manual' });
     expect(summarize(f.repository.snapshot().processed)).toMatchObject({ incomeCents: 0, expenseCents: 0, reviewCount: 0 });
     await f.repository.editOverride(id, f.repository.version(f.repository.snapshot(), id), { category: 'dining' });
     expect(summarize(f.repository.snapshot().processed).expenseCents).toBe(2000);

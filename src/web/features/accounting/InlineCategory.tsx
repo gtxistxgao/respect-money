@@ -2,7 +2,7 @@ import { Select } from '../../Select.js';
 import { t } from "../../../i18n/index.js";
 import { useState } from 'react';
 import { Check, LoaderCircle } from 'lucide-react';
-import { categoryOptions, kindLabels, type Category, type LedgerRow, type TransactionOverride } from '../../../shared/models.js';
+import { categoryOptions, kindLabels, nonCashflowCategoryKind, type Category, type LedgerRow, type TransactionOverride } from '../../../shared/models.js';
 import { api, refreshData } from '../../api.js';
 
 export function InlineCategory({ row }: { row: LedgerRow }) {
@@ -43,7 +43,7 @@ export function InlineCategory({ row }: { row: LedgerRow }) {
             {categoryOptions.map(([id, label]) => <option key={id} value={id}>{t(label)}</option>)}
           </Select>
         </div>
-        {!['income', 'expense', 'refund'].includes(row.kind) && <small>{row.kind === 'transfer' && row.category === 'internal_transfer' ? t("Excluded from income and spending") : kindLabels[row.kind]}</small>}
+        {!['income', 'expense', 'refund'].includes(row.kind) && <small>{nonCashflowCategoryKind(row.category) === row.kind ? t("Excluded from income and spending") : kindLabels[row.kind]}</small>}
       </div>
       {saving ? <LoaderCircle className="spin" size={13} aria-hidden="true" /> : row.classificationSource === 'manual' && <Check size={13} aria-label={t("Manually confirmed")} />}
       <span className="sr-only" role="status">{saving ? t("Saving category…") : ''}</span>

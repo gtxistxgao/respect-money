@@ -59,7 +59,7 @@ export function Accounting() {
     { id: 'account', accessorKey: 'accountName', cell: ({ row }) => <span className="ledger-account-cell" title={`${row.original.accountName}${row.original.accountMask ? ` · ${row.original.accountMask}` : ''}`}><span>{row.original.accountName}</span>{row.original.accountMask && <span className="account-mask"> · {row.original.accountMask}</span>}</span> },
     { id: 'amount', accessorKey: 'cashflowCents', cell: ({ row }) => {
       const { cashflowCents, currency, kind, needsReview } = row.original;
-      const showDirection = (mode === 'review' && isAwaitingReview(row.original)) || kind === 'review' || needsReview || kind === 'transfer';
+      const showDirection = (mode === 'review' && isAwaitingReview(row.original)) || kind === 'review' || needsReview || kind === 'transfer' || kind === 'investment';
       const incoming = showDirection ? cashflowCents > 0 : kind === 'income' || kind === 'refund';
       const sign = showDirection ? cashflowCents < 0 ? '−' : cashflowCents > 0 ? '+' : '' : kind === 'refund' ? '−' : kind === 'income' ? '+' : '';
       return <span className={`amount-cell ${incoming ? 'income-text' : ''}`}>{sign}{money(Math.abs(cashflowCents), currency)}</span>;
