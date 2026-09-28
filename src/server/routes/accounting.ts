@@ -1,7 +1,7 @@
 import { message as t } from "../../i18n/index.js";
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { categories, canonicalCategory, dateSchema, manualAccountInput, manualTransactionInput, monthSchema, overrideInput, splitsInput, today, type LedgerRow } from '../../shared/models.js';
+import { categories, canonicalCategory, dateSchema, isAwaitingReview, manualAccountInput, manualTransactionInput, monthSchema, overrideInput, splitsInput, today, type LedgerRow } from '../../shared/models.js';
 import { AppError, cents, normalize } from '../domain/ledger.js';
 import type { Repository } from '../storage/repository.js';
 import { duplicateCandidates } from '../domain/duplicates.js';
@@ -67,7 +67,7 @@ export async function accountingRoutes(app: FastifyInstance, repository: Reposit
     let rows = selectedRows(query.month, query.accounts);
     if (query.mode === 'expense') rows = rows.filter((r) => ['expense', 'refund'].includes(r.kind) && !r.excluded && r.currency === 'USD');
     if (query.mode === 'income') rows = rows.filter((r) => r.kind === 'income' && !r.excluded && r.currency === 'USD');
-    if (query.mode === 'review') rows = rows.filter((r) => (r.kind === 'review' || r.needsReview) && !r.excluded);
+    if (query.mode === 'review') rows = rows.filter(isAwaitingReview);
     rows = rows.filter((r) => (!query.q || `${r.description} ${r.merchant} ${r.notes}`.toLowerCase().includes(query.q.toLowerCase()))
       && (!query.categories || query.categories.split(',').map(canonicalCategory).includes(r.category)) && (!query.countries || query.countries.split(',').includes(r.country))
       && (!query.from || r.postedDate >= query.from) && (!query.to || r.postedDate <= query.to)

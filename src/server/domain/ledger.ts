@@ -1,7 +1,7 @@
 import { message as t, LocalizedError } from "../../i18n/index.js";
 import { createHash } from 'node:crypto';
 import Decimal from 'decimal.js';
-import { categorySchema, confirmedCategoryKind, dateSchema, kindSchema, type Account, type Classification, type DateRange, type LedgerRow, type RawRecord, type SourceTransaction, type Summary, type TransactionOverride } from '../../shared/models.js';
+import { categorySchema, confirmedCategoryKind, dateSchema, isAwaitingReview, kindSchema, type Account, type Classification, type DateRange, type LedgerRow, type RawRecord, type SourceTransaction, type Summary, type TransactionOverride } from '../../shared/models.js';
 
 export class AppError extends LocalizedError {
   constructor(message: string, public statusCode = 400) { super(message); }
@@ -166,9 +166,12 @@ export function createLedger(
 export function summarize(rows: LedgerRow[]): Summary {
   const result: Summary = { incomeCents: 0, expenseCents: 0, netCents: 0, reviewCents: 0, reviewCount: 0, transactionCount: rows.length };
   for (const row of rows) {
-    if (row.excluded || row.currency !== 'USD') continue;
-    if (row.kind === 'review' || row.needsReview) { result.reviewCents += Math.abs(row.cashflowCents); result.reviewCount++; }
-    else if (row.kind === 'income') result.incomeCents += row.cashflowCents;
+    if (isAwaitingReview(row)) {
+      result.reviewCount++;
+      if (row.currency === 'USD') result.reviewCents += Math.abs(row.cashflowCents);
+    }
+    if (row.excluded || row.currency !== 'USD' || row.kind === 'review' || row.needsReview) continue;
+    if (row.kind === 'income') result.incomeCents += row.cashflowCents;
     else if (row.kind === 'expense' || row.kind === 'refund') result.expenseCents -= row.cashflowCents;
   }
   result.netCents = result.incomeCents - result.expenseCents;

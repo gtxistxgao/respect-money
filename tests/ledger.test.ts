@@ -8,6 +8,19 @@ const raw = (payload: Record<string, unknown>): RawRecord => ({ accountId: accou
 const ledger = (records: RawRecord[]) => createLedger(records, [account], {}, {}, ranges);
 
 describe('ledger invariants', () => {
+  it.each(['codex', 'claude'] as const)('includes uncategorized %s results in review without removing known cash flows from totals', (provider) => {
+    const record = raw({});
+    const tx = normalize(record);
+    const classification: Classification = { provider, sourceHash: tx.sourceHash, kind: 'expense', category: 'uncategorized', country: 'US', countrySource: 'default', reason: 'Category unknown.', needsReview: false, classifiedAt: '2026-08-15', classifierVersion: 'test' };
+    const rows = createLedger([record], [account], {}, { [tx.id]: classification }, ranges);
+    expect(rows[0]).toMatchObject({ needsReview: false, classificationSource: provider });
+    expect(summarize(rows)).toMatchObject({ expenseCents: 10000, netCents: -10000, reviewCount: 1, reviewCents: 10000 });
+    expect(summarize([{ ...rows[0], currency: 'CAD' }])).toMatchObject({ expenseCents: 0, reviewCount: 1, reviewCents: 0 });
+    expect(summarize([{ ...rows[0], excluded: true }])).toMatchObject({ expenseCents: 0, reviewCount: 0, reviewCents: 0 });
+    for (const kind of ['payment', 'transfer', 'investment', 'reinvestment', 'excluded'] as const) {
+      expect(summarize([{ ...rows[0], kind }])).toMatchObject({ expenseCents: 0, reviewCount: 0 });
+    }
+  });
   it('resolves manual categories without discarding explicit review or structural problems', () => {
     const record = raw({ name: 'Zelle purchase' });
     const tx = normalize(record);

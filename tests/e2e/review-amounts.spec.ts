@@ -3,6 +3,30 @@ import { translate } from '../../src/i18n/index.js';
 const tr = (key: string, params?: Record<string, string | number>) => translate('zh', key, params);
 import { expect, test } from '@playwright/test';
 
+test('uncategorized spending appears in review and leaves after categorization without changing totals', async ({ page, request }) => {
+  const account = await (await request.post('/api/accounts/manual', { data: { name: 'Uncategorized fixture', institution: 'Test', type: 'checking' } })).json();
+  for (const [kind, description] of [['expense', 'Uncategorized purchase'], ['payment', 'Card repayment']]) {
+    expect((await request.post('/api/transactions/manual', { data: { accountId: account.id, postedDate: '2026-06-15', description, amount: '25.00', kind, category: 'uncategorized', country: 'US' } })).ok()).toBe(true);
+  }
+  await page.goto(`/?month=2026-06&accounts=${account.id}`);
+  const reviewTab = page.getByRole('button', { name: new RegExp('^' + tr('Needs review')) });
+  await expect(reviewTab.locator('.count-badge')).toHaveText('1');
+  await expect(page.getByRole('button', { name: new RegExp(tr('Total spending')) })).toContainText('$25.00');
+  await reviewTab.click();
+  await expect(page.locator('tbody tr')).toHaveCount(1);
+  await expect(page.locator('tbody')).toContainText('Uncategorized purchase');
+  await expect(page.locator('tbody .amount-cell')).toHaveText('−US$25.00');
+  await expect(page.locator('.table-footer')).toContainText(tr('Amount awaiting review') + ' US$25.00');
+  await page.reload();
+  await expect(page.locator('tbody tr')).toHaveCount(1);
+  await selectOption(page.getByRole('combobox', { name: tr('Change category for {p0}', { p0: 'Uncategorized purchase' }), exact: true }), 'dining');
+  await expect(page.locator('tbody tr')).toHaveCount(0);
+  await expect(reviewTab.locator('.count-badge')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: new RegExp(tr('Total spending')) })).toContainText('$25.00');
+  await page.reload();
+  await expect(page.locator('tbody tr')).toHaveCount(0);
+});
+
 test('shows actual incoming and outgoing signs for transactions awaiting review', async ({ page, request }) => {
   const account = await (await request.post('/api/accounts/manual', { data: { name: 'Review direction fixture', institution: 'Test', type: 'checking' } })).json();
   for (const [description, amount, kind] of [['Pending outgoing', '50.00', 'review'], ['Pending incoming', '75.00', 'income']]) {

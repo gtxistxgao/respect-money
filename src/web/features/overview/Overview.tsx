@@ -48,7 +48,7 @@ export function Overview() {
       </section>
       <div className="overview-month-heading"><div className="month-stepper"><button className="icon-button" aria-label={t("View previous month")} disabled={selectedIndex <= 0} onClick={() => change('month', selectionMonths[selectedIndex - 1].month)}><ChevronLeft size={18} /></button><Select aria-label={t("View month")} value={selected.month} onValueChange={(nextValue) => change('month', nextValue)}>{selectionMonths.map((month) => <option key={month.month} value={month.month}>{monthLabel(month.month)}</option>)}</Select><button className="icon-button" aria-label={t("View next month")} disabled={selectedIndex >= selectionMonths.length - 1} onClick={() => change('month', selectionMonths[selectedIndex + 1].month)}><ChevronRight size={18} /></button></div><Link className="month-detail-link" to={`/?${detailQuery}`}>{t("View monthly ledger")} <ArrowRight size={15} /></Link></div>
       {selected.incompleteAccounts.length > 0 && <div className="notice">{t("Incomplete synchronization: {accounts}. Only received records are included.", { accounts: selected.incompleteAccounts.join(t("list.separator")) })}</div>}
-      {selected.reviewCount > 0 && <div className="notice">{t("{count} transactions are awaiting review and excluded from cash flow and category shares.", { count: selected.reviewCount })}<Link className="inline-button" to={`/?${detailQuery}&mode=review`}>{t("Review now")}</Link></div>}
+      {selected.reviewCount > 0 && <div className="notice">{t("{count} transactions need review. Uncategorized income and spending remain in totals; uncertain cash flows are excluded.", { count: selected.reviewCount })}<Link className="inline-button" to={`/?${detailQuery}&mode=review`}>{t("Review now")}</Link></div>}
       {!selected.transactionCount && <div className="notice">{t("No transactions have been received this month. This does not mean actual cash flow was zero.")}</div>}
       <div className="overview-detail-grid">
         <section className="cashflow-panel" aria-label={t("Selected month's cash flow")}><div className="chart-heading"><div><h2>{monthLabel(selected.month)}</h2><p>{t("Monthly cash flow comparison")}</p></div></div>
@@ -59,7 +59,7 @@ export function Overview() {
         </section>
         <CategoryBreakdown data={selected} accounts={accountFilter} />
       </div>
-      <p className="page-footer">{t("Only posted USD records from enabled accounts are included. Transfers, credit card payments, investment trades and records awaiting review are excluded.")}</p>
+      <p className="page-footer">{t("Only posted USD records from enabled accounts are included. Transfers, credit card payments, investment trades and uncertain cash flows are excluded.")}</p>
     </>}
   </main>;
 }

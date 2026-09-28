@@ -5,6 +5,41 @@ import { join } from 'node:path';
 import { buildApp } from '../src/server/app.js';
 import { readConfig } from '../src/server/config.js';
 
+it('lists uncategorized cash flows for review, preserves totals, and removes categorized rows durably', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'respect-money-review-'));
+  let app = await buildApp({ ...readConfig(), dataDir: directory });
+  try {
+    const account = (await app.inject({ method: 'POST', url: '/api/accounts/manual', payload: { name: 'Review fixture', institution: 'Test', type: 'checking' } })).json();
+    const ids: Record<string, string> = {};
+    for (const kind of ['expense', 'income', 'refund', 'review', 'payment', 'transfer', 'investment', 'reinvestment']) {
+      const created = await app.inject({ method: 'POST', url: '/api/transactions/manual', payload: { accountId: account.id, postedDate: '2026-08-02', description: kind, amount: '10.00', kind, category: 'uncategorized', country: 'US' } });
+      expect(created.statusCode).toBe(201);
+      ids[kind] = created.json().id;
+    }
+    const query = `month=2026-08&accounts=${account.id}`;
+    const review = (await app.inject(`/api/accounting/transactions?${query}&mode=review`)).json();
+    expect(review.rows.map((row: { kind: string }) => row.kind).sort()).toEqual(['expense', 'income', 'refund', 'review']);
+    expect(review).toMatchObject({ total: 4, subtotalCents: 4000 });
+    const totals = { incomeCents: 1000, expenseCents: 0, netCents: 1000 };
+    expect((await app.inject(`/api/accounting/summary?${query}`)).json()).toMatchObject({ ...totals, reviewCount: 4, reviewCents: 4000 });
+    expect((await app.inject(`/api/accounting/transactions?${query}&mode=review&q=expense`)).json().total).toBe(1);
+    expect((await app.inject(`/api/accounting/transactions?month=2026-07&mode=review`)).json().total).toBe(0);
+    expect((await app.inject(`/api/accounting/transactions?month=2026-08&accounts=missing&mode=review`)).json().total).toBe(0);
+    const detail = (await app.inject(`/api/transactions/${ids.expense}`)).json();
+    expect((await app.inject({ method: 'PUT', url: `/api/transactions/${ids.expense}/overrides`, payload: { version: detail.version, category: 'dining' } })).statusCode).toBe(200);
+    const refund = (await app.inject(`/api/transactions/${ids.refund}`)).json();
+    expect((await app.inject({ method: 'PUT', url: `/api/transactions/${ids.refund}/splits`, payload: { version: refund.version, splits: [
+      { cashflowCents: 400, kind: 'refund', category: 'uncategorized', country: 'US', description: 'Uncategorized split' },
+      { cashflowCents: 600, kind: 'refund', category: 'dining', country: 'US', description: 'Categorized split' },
+    ] } })).statusCode).toBe(200);
+    await app.close(); app = await buildApp({ ...readConfig(), dataDir: directory });
+    const remaining = (await app.inject(`/api/accounting/transactions?${query}&mode=review`)).json();
+    expect(remaining).toMatchObject({ total: 3, subtotalCents: 2400 });
+    expect(remaining.rows.map((row: { description: string }) => row.description).sort()).toEqual(['Uncategorized split', 'income', 'review']);
+    expect((await app.inject(`/api/accounting/summary?${query}`)).json()).toMatchObject({ ...totals, reviewCount: 3, reviewCents: 2400 });
+  } finally { await app.close(); await rm(directory, { recursive: true, force: true }); }
+});
+
 it.each(['salary', 'investments'])('serves durable manual accounting, filters, summaries and guarded edits with %s income', async (incomeCategory) => {
   const directory = await mkdtemp(join(tmpdir(), 'respect-money-api-'));
   let app = await buildApp({ ...readConfig(), dataDir: directory });

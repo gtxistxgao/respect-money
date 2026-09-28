@@ -6,7 +6,7 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from '@tanstack/react-table';
 import { ArrowDownLeft, ArrowUpRight, ChevronLeft, ChevronRight, Filter, Plus, RefreshCw, Pencil, Split, WalletCards, ArrowDownUp, Search, X } from 'lucide-react';
-import { type Account, type LedgerRow, type MonthSummary, categoryOptions, countryOptions, countryLabel, today } from '../../../shared/models.js';
+import { type Account, type LedgerRow, type MonthSummary, categoryOptions, countryOptions, countryLabel, isAwaitingReview, today } from '../../../shared/models.js';
 import { api, money, refreshData, type SettingsStatus } from '../../api.js';
 import { ErrorNotice, Loading } from '../../components.js';
 import { CategoryIcon } from '../../CategoryIcon.js';
@@ -55,11 +55,11 @@ export function Accounting() {
     void locale; // Labels and currency formatting must refresh when the language changes.
     return [
     { id: 'date', accessorKey: 'postedDate', cell: ({ row }) => <span className="date-cell">{row.original.postedDate.slice(5).replace('-', ' / ')}</span> },
-    { id: 'description', accessorKey: 'description', cell: ({ row }) => <div className="description-cell"><span className={`merchant-icon merchant-${row.original.category}`}><CategoryIcon category={row.original.category} size={20} /></span><div className="description-content"><button className="description-button" title={row.original.description} onClick={() => setDialog({ type: 'transaction', id: row.original.parentId })}>{row.original.description}</button><small>{row.original.splitId && t(" · Split")}{row.original.needsReview && t(" · Needs review")}{row.original.excluded && t(" · Excluded")}</small></div></div> },
+    { id: 'description', accessorKey: 'description', cell: ({ row }) => <div className="description-cell"><span className={`merchant-icon merchant-${row.original.category}`}><CategoryIcon category={row.original.category} size={20} /></span><div className="description-content"><button className="description-button" title={row.original.description} onClick={() => setDialog({ type: 'transaction', id: row.original.parentId })}>{row.original.description}</button><small>{row.original.splitId && t(" · Split")}{isAwaitingReview(row.original) && t(" · Needs review")}{row.original.excluded && t(" · Excluded")}</small></div></div> },
     { id: 'account', accessorKey: 'accountName', cell: ({ row }) => <span className="ledger-account-cell" title={`${row.original.accountName}${row.original.accountMask ? ` · ${row.original.accountMask}` : ''}`}><span>{row.original.accountName}</span>{row.original.accountMask && <span className="account-mask"> · {row.original.accountMask}</span>}</span> },
     { id: 'amount', accessorKey: 'cashflowCents', cell: ({ row }) => {
       const { cashflowCents, currency, kind, needsReview } = row.original;
-      const showDirection = kind === 'review' || needsReview || kind === 'transfer';
+      const showDirection = (mode === 'review' && isAwaitingReview(row.original)) || kind === 'review' || needsReview || kind === 'transfer';
       const incoming = showDirection ? cashflowCents > 0 : kind === 'income' || kind === 'refund';
       const sign = showDirection ? cashflowCents < 0 ? '−' : cashflowCents > 0 ? '+' : '' : kind === 'refund' ? '−' : kind === 'income' ? '+' : '';
       return <span className={`amount-cell ${incoming ? 'income-text' : ''}`}>{sign}{money(Math.abs(cashflowCents), currency)}</span>;
@@ -67,7 +67,7 @@ export function Accounting() {
     { id: 'category', accessorKey: 'category', cell: ({ row }) => <InlineCategory row={row.original} /> },
     { id: 'country', accessorKey: 'country', cell: ({ row }) => <span className="location-cell">{countryLabel(row.original.country)}{row.original.countrySource === 'default' && <small>{t("(default)")}</small>}</span> },
     { id: 'actions', cell: ({ row }) => <div className="row-actions"><button className="icon-button" aria-label={t("Edit {p0}", { p0: row.original.description })} onClick={() => setDialog({ type: 'transaction', id: row.original.parentId })}><Pencil size={15} /></button><button className="icon-button" aria-label={t("Split {p0}", { p0: row.original.description })} onClick={() => setDialog({ type: 'split', id: row.original.parentId })}><Split size={15} /></button></div> },
-  ]; }, [locale]);
+  ]; }, [locale, mode]);
   // React Compiler is not enabled; TanStack Table owns its row model memoization.
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({ data: transactions.data?.rows || emptyRows, columns, getRowId: (row) => row.id, getCoreRowModel: getCoreRowModel() });

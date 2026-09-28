@@ -84,6 +84,11 @@ export type LedgerRow = Omit<SourceTransaction, 'raw' | 'countrySource'> & {
   excluded: boolean; duplicateOf?: string | null;
   classifiedAt?: string; classifierVersion?: string;
 };
+// Missing spending/income categories need attention without making the cashflow uncertain.
+export function isAwaitingReview(row: Pick<LedgerRow, 'kind' | 'category' | 'needsReview' | 'excluded'>): boolean {
+  return !row.excluded && row.kind !== 'excluded' && (row.kind === 'review' || row.needsReview
+    || (row.category === 'uncategorized' && ['expense', 'income', 'refund'].includes(row.kind)));
+}
 export const ledgerRowSchema = z.object({
   id: z.string(), accountId: z.string(), source: sourceSchema, sourceId: z.string(), postedDate: dateSchema,
   description: z.string(), merchant: z.string(), cashflowCents: z.number().int().safe(), currency: z.string(),
