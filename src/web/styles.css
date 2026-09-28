@@ -27,6 +27,51 @@
   --radius: 8px;
   --font-numeric: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
   --amount-band: #182c40;
+  --amount-header: #203b56;
+  --amount-header-text: #e8f3ff;
+  --amount-border: #304c68;
+  --row-hover: #ffffff05;
+  --childcare: #f6b5a6;
+  --institution-blue: #141c29;
+  --institution-green: #16221f;
+  --institution-purple: #201d29;
+}
+:root[data-theme=light] {
+  color-scheme: light;
+  --background: #f5f7fa;
+  --surface: #ffffff;
+  --surface-raised: #edf2f7;
+  --line: #dce3eb;
+  --border: #b9c5d3;
+  --text: #1b2635;
+  --muted: #526176;
+  --subtle: #607086;
+  --accent: #187335;
+  --accent-hover: #125d29;
+  --accent-soft: #1873350d;
+  --pink: #7050a0;
+  --orange: #906000;
+  --cyan: #226b9b;
+  --danger: #ba3029;
+  --amount-band: #eaf1f8;
+  --amount-header: #dce8f4;
+  --amount-header-text: #234562;
+  --amount-border: #c2d3e4;
+  --row-hover: #1b263508;
+  --childcare: #a04e3b;
+  --institution-blue: #eef3fa;
+  --institution-green: #edf5f0;
+  --institution-purple: #f3eff8;
+  --chart-shopping: #7252a6;
+  --chart-entertainment: #23776c;
+  --chart-travel: #186f96;
+  --chart-business: #3e6699;
+  --chart-salary: #347c2b;
+  --chart-investments: #2b7750;
+  --chart-interest: #366f86;
+  --chart-dividends: #a23c98;
+  --chart-activity: #666675;
+  --chart-uncategorized: #646477;
 }
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; }
@@ -88,6 +133,8 @@ textarea { resize: vertical; }
 .workspace-title { font-size: 12px; color: var(--muted); }
 .workspace-local { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 11px; }
 .workspace-local svg { color: var(--accent); }
+.topbar-actions { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.icon-button.theme-toggle { border: 1px solid var(--border); }
 .month-rail { min-height: 0; display: flex; flex-direction: column; margin-top: 20px; border-top: 1px solid var(--line); padding-top: 16px; }
 .rail-title { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; padding: 0 12px; }
 .year-picker { display: block; margin: 14px 6px 12px; }
@@ -174,14 +221,14 @@ textarea { resize: vertical; }
 .align-right .column-header { justify-content: flex-end; }
 .transaction-table td { padding: 9px 10px; border-bottom: 1px solid var(--line); }
 .transaction-table tr:last-child td { border-bottom: 0; }
-.transaction-table tbody tr:hover { background: #ffffff03; }
+.transaction-table tbody tr:hover { background: var(--row-hover); }
 .date-cell { color: var(--muted); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .description-cell { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .merchant-icon { display: grid; place-items: center; width: 26px; height: 26px; flex-shrink: 0; border-radius: 5px; background: var(--surface-raised); color: var(--muted); font-size: 14px; font-weight: 600; }
 .merchant-dining { background: #d9a44114; color: var(--orange); }
 .merchant-groceries, .merchant-salary { background: var(--accent-soft); color: var(--accent); }
 .merchant-shopping { background: #b4a4e814; color: var(--pink); }
-.merchant-childcare { background: #f6b5a614; color: #f6b5a6; }
+.merchant-childcare { background: #f6b5a614; color: var(--childcare); }
 .merchant-travel { background: #79b8ed14; color: var(--cyan); }
 .description-content { display: flex; align-items: center; min-width: 0; }
 .ledger-account-cell { display: flex; align-items: center; min-width: 0; color: var(--muted); font-size: 11px; white-space: nowrap; }
@@ -206,7 +253,7 @@ textarea { resize: vertical; }
 .dot-dining { background: var(--orange); }
 .dot-groceries, .dot-salary, .dot-investments, .dot-interest, .dot-dividends { background: var(--accent); }
 .dot-shopping { background: var(--pink); }
-.dot-childcare { background: #f6b5a6; }
+.dot-childcare { background: var(--childcare); }
 .dot-travel { background: var(--cyan); }
 .row-actions { display: flex; justify-content: flex-end; gap: 2px; }
 .table-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
@@ -334,7 +381,9 @@ textarea { resize: vertical; }
   .primary-nav a { gap: 6px; padding: 10px; font-size: 11px; white-space: nowrap; }
   .primary-nav a svg { width: 16px; height: 16px; }
   .app-workspace { margin-left: 0; }
-  .topbar { display: none; }
+  .topbar { min-height: 48px; padding: 6px 12px; }
+  .workspace-local { display: none; }
+  .theme-toggle { width: 36px; height: 36px; }
   .month-rail { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; margin: 0; padding-top: 8px; }
   .rail-title { padding: 0; font-size: 11px; }
   .year-picker { margin: 0; }
@@ -446,10 +495,10 @@ textarea { resize: vertical; }
 .custom-model-field { margin-top: 14px; }
 
 /* A blue amount band echoes the option chain's strike column. */
-.transaction-table td.ledger-col-amount { background: var(--amount-band); border-inline: 1px solid #304c68; }
-.transaction-table th.ledger-col-amount { background: #203b56; color: #e8f3ff; border-inline: 1px solid #304c68; }
+.transaction-table td.ledger-col-amount { background: var(--amount-band); border-inline: 1px solid var(--amount-border); }
+.transaction-table th.ledger-col-amount { background: var(--amount-header); color: var(--amount-header-text); border-inline: 1px solid var(--amount-border); }
 .transaction-table tbody tr:hover { background: var(--surface-raised); }
-.transaction-table tbody tr:hover td.ledger-col-amount { background: #203b56; }
+.transaction-table tbody tr:hover td.ledger-col-amount { background: var(--amount-header); }
 .merchant-icon svg { width: 16px; height: 16px; }
 .date-cell, .net-line strong, .table-footer strong { font-family: var(--font-numeric); }
 @media (max-width: 760px) {
@@ -654,7 +703,7 @@ textarea { resize: vertical; }
 .account-data-table th, .account-data-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; overflow-wrap: anywhere; font-weight: 400; }
 .account-data-table thead th { padding: 0; background: var(--surface-raised); color: var(--muted); font-size: 10px; }
 .account-data-table thead button { display: flex; align-items: center; gap: 5px; width: 100%; min-height: 36px; padding: 8px 10px; border: 0; background: transparent; color: inherit; text-align: inherit; white-space: nowrap; }
-.account-data-table thead button:hover { color: var(--text); background: #ffffff05; }
+.account-data-table thead button:hover { color: var(--text); background: var(--row-hover); }
 .account-data-table thead button:focus-visible { outline-offset: -3px; }
 .account-data-table thead svg { flex-shrink: 0; opacity: .5; }
 .account-data-table thead th[aria-sort="ascending"], .account-data-table thead th[aria-sort="descending"] { color: var(--cyan); }
@@ -669,9 +718,9 @@ textarea { resize: vertical; }
 .account-data-table .account-col-updated { width: 20%; font-variant-numeric: tabular-nums; }
 .account-data-table td.account-col-updated { color: var(--muted); font-size: 10px; }
 .account-data-table small { display: block; color: var(--muted); font: 10px/1.5 'Inter Variable', 'PingFang SC', sans-serif; margin-top: 3px; white-space: normal; }
-.account-data-table .institution-tone-0 { background: #141c29; }
-.account-data-table .institution-tone-1 { background: #16221f; }
-.account-data-table .institution-tone-2 { background: #201d29; }
+.account-data-table .institution-tone-0 { background: var(--institution-blue); }
+.account-data-table .institution-tone-1 { background: var(--institution-green); }
+.account-data-table .institution-tone-2 { background: var(--institution-purple); }
 .account-data-table .institution-start > * { border-top: 2px solid var(--border); }
 .account-data-table tbody tr:hover { filter: brightness(1.18); }
 

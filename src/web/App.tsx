@@ -13,6 +13,7 @@ import { MonthNavigation } from './MonthNavigation.js';
 import { Overview } from './features/overview/Overview.js';
 import { today } from '../shared/models.js';
 import { SettingsNavigation } from './features/settings/SettingsNavigation.js';
+import { ThemeToggle } from './ThemeToggle.js';
 
 export function App() {
   return <QueryClientProvider client={queryClient}><BrowserRouter><AppLayout /></BrowserRouter></QueryClientProvider>;
@@ -45,7 +46,7 @@ function AppLayout() {
       <div className="rail-footer"><span><span className="status-dot" />{t("Saved locally")}</span><NavLink to="/settings">{t("Settings")} <ChevronRight size={14} /></NavLink></div>
     </aside>
     <div className="app-workspace">
-      <header className="topbar"><span className="workspace-title">{pathname === '/' ? t("Monthly ledger") : pathname === '/overview' ? t("Cash flow overview") : wealthPage ? t(wealthPage.title === 'Wealth' ? 'Assets and net worth' : wealthPage.title) : pathname === '/settings' ? t("Accounts and preferences") : 'Respect Money'}</span><span className="workspace-local"><Monitor size={16} />{t("Local personal ledger")}</span></header>
+      <header className="topbar"><span className="workspace-title">{pathname === '/' ? t("Monthly ledger") : pathname === '/overview' ? t("Cash flow overview") : wealthPage ? t(wealthPage.title === 'Wealth' ? 'Assets and net worth' : wealthPage.title) : pathname === '/settings' ? t("Accounts and preferences") : 'Respect Money'}</span><div className="topbar-actions"><span className="workspace-local"><Monitor size={16} />{t("Local personal ledger")}</span><ThemeToggle /></div></header>
       <div id="main-content" tabIndex={-1}>
         <Routes>{Object.entries(wealthPages).map(([view, page]) => <Route key={view} path={page.path} element={<Wealth view={view as keyof typeof wealthPages} />} />)}<Route path="/" element={<Accounting />} /><Route path="/overview" element={<Overview />} /><Route path="/settings" element={<Settings />} /><Route path="*" element={<main className="settings-main"><h1>{t("Page not found")}</h1><NavLink to="/">{t("Back to ledger")}</NavLink></main>} /></Routes>
       </div>

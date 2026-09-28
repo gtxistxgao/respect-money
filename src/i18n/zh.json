@@ -724,5 +724,7 @@
   "1 USD = {rate} {currency}": "1 美元 = {rate} {currency}",
   "Approx. {amount} {currency}": "约 {amount} {currency}",
   "Provider changes are saved automatically. Save other changes with Save settings.": "服务提供方切换后自动保存。其他修改请点击“保存设置”。",
-  "The model returned an investment transaction category that conflicts with the transaction type. Results were not published.": "模型返回的投资交易分类与交易类型冲突，结果未发布。"
+  "The model returned an investment transaction category that conflicts with the transaction type. Results were not published.": "模型返回的投资交易分类与交易类型冲突，结果未发布。",
+  "Switch to light theme": "切换为浅色主题",
+  "Switch to dark theme": "切换为深色主题"
 }

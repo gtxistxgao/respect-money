@@ -1,10 +1,20 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#171821" />
+    <meta name="theme-color" content="#0a0e14" />
     <meta name="color-scheme" content="dark" />
+    <script>
+      // Restore before rendering so a saved light theme never flashes dark.
+      try {
+        if (localStorage.getItem('respect-money-theme') === 'light') {
+          document.documentElement.dataset.theme = 'light';
+          document.querySelector('meta[name="theme-color"]').content = '#f5f7fa';
+          document.querySelector('meta[name="color-scheme"]').content = 'light';
+        }
+      } catch { /* Use the default theme when storage is unavailable. */ }
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Respect Money · Accounting</title>
   </head>

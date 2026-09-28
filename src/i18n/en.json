@@ -724,5 +724,7 @@
   "1 USD = {rate} {currency}": "1 USD = {rate} {currency}",
   "Approx. {amount} {currency}": "Approx. {amount} {currency}",
   "Provider changes are saved automatically. Save other changes with Save settings.": "Provider changes are saved automatically. Save other changes with Save settings.",
-  "The model returned an investment transaction category that conflicts with the transaction type. Results were not published.": "The model returned an investment transaction category that conflicts with the transaction type. Results were not published."
+  "The model returned an investment transaction category that conflicts with the transaction type. Results were not published.": "The model returned an investment transaction category that conflicts with the transaction type. Results were not published.",
+  "Switch to light theme": "Switch to light theme",
+  "Switch to dark theme": "Switch to dark theme"
 }

@@ -23,7 +23,7 @@
 .zero-marker { stroke: var(--muted); stroke-width: 2; }
 .chart-month { cursor: pointer; }
 .chart-month-target { fill: transparent; stroke: transparent; }
-.chart-month:hover .chart-month-target { fill: #ffffff04; }
+.chart-month:hover .chart-month-target { fill: var(--row-hover); }
 .chart-month[aria-pressed=true] .chart-month-target { fill: var(--accent-soft); stroke: #3fb95033; }
 .chart-month[aria-pressed=true] .month-axis-label { fill: var(--text); font-weight: 600; }
 .chart-month:focus-visible { outline: none; }

@@ -8,9 +8,9 @@ import { CategoryIcon } from '../../CategoryIcon.js';
 import { resetTableFilters } from '../accounting/filters.js';
 
 const colors: Record<Category, string> = {
-  dining: '#d9a441', groceries: '#3fb950', housing: '#b4a4e8', transport: '#79b8ed',
-  shopping: '#c4adfa', health: '#f4635b', childcare: '#f6b5a6', entertainment: '#73cabe', travel: '#56c6f6',
-  side_business_expenses: '#8bb8f0', salary: '#6fc666', investments: '#88d6b0', interest: '#b5e6fb', dividends: '#e27dd7', investment_transaction: '#92929f', internal_transfer: '#92929f', uncategorized: '#acacb9',
+  dining: 'var(--orange)', groceries: 'var(--accent)', housing: 'var(--pink)', transport: 'var(--cyan)',
+  shopping: 'var(--chart-shopping, #c4adfa)', health: 'var(--danger)', childcare: 'var(--childcare)', entertainment: 'var(--chart-entertainment, #73cabe)', travel: 'var(--chart-travel, #56c6f6)',
+  side_business_expenses: 'var(--chart-business, #8bb8f0)', salary: 'var(--chart-salary, #6fc666)', investments: 'var(--chart-investments, #88d6b0)', interest: 'var(--chart-interest, #b5e6fb)', dividends: 'var(--chart-dividends, #e27dd7)', investment_transaction: 'var(--chart-activity, #92929f)', internal_transfer: 'var(--chart-activity, #92929f)', uncategorized: 'var(--chart-uncategorized, #acacb9)',
 };
 export const percentage = (ratio: number) => new Intl.NumberFormat(intlLocale(), { style: 'percent', maximumFractionDigits: 1 }).format(ratio);
 export const monthLabel = formatMonth;
