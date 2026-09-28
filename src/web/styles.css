@@ -804,5 +804,5 @@ textarea { resize: vertical; }
 .balance-panel.positive { --balance-color: var(--accent); }
 .balance-panel.negative { --balance-color: var(--danger); }
 .balance-panel, .balance-panel:hover { border-color: color-mix(in srgb, var(--balance-color) 45%, var(--line)); border-top-color: var(--balance-color); }
-.balance-panel > strong, .balance-panel .summary-label { color: var(--balance-color); }
-.balance-symbol { background: color-mix(in srgb, var(--balance-color) 12%, transparent); }
+.balance-panel .balance-copy, .balance-symbol { color: var(--balance-color); }
+.balance-symbol { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--balance-color) 25%, transparent); background: color-mix(in srgb, var(--balance-color) 12%, transparent); }
