@@ -214,7 +214,7 @@ textarea { resize: vertical; }
 .transaction-table th.ledger-col-category { width: 138px; }
 .transaction-table th.ledger-col-kind { width: 144px; }
 .cashflow-type-cell { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
-.cashflow-type-cell > span { flex-shrink: 0; }
+.cashflow-type-picker, .cashflow-type-cell > svg { flex-shrink: 0; }
 .cashflow-type-cell small { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--subtle); font-size: 10px; line-height: 1.4; }
 .transaction-table th.ledger-col-country { width: 104px; }
 .column-header { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
@@ -807,3 +807,8 @@ textarea { resize: vertical; }
 .balance-panel, .balance-panel:hover { border-color: color-mix(in srgb, var(--balance-color) 45%, var(--line)); border-top-color: var(--balance-color); }
 .balance-panel .balance-copy, .balance-symbol { color: var(--balance-color); }
 .balance-symbol { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--balance-color) 25%, transparent); background: color-mix(in srgb, var(--balance-color) 12%, transparent); }
+
+.cashflow-type-picker .select-trigger { width: max-content; min-width: 68px; min-height: 28px; padding: 3px 4px; gap: 4px; margin-left: -4px; border-color: transparent; background: transparent; color: inherit; font-size: inherit; }
+.cashflow-type-picker .select-trigger:not(:disabled):hover, .cashflow-type-picker .select-trigger:focus { border-color: var(--border); background: var(--surface-raised); color: var(--text); }
+.cashflow-type-picker .select-trigger:disabled { cursor: wait; }
+@media (max-width: 760px) { .cashflow-type-picker .select-trigger { min-height: 32px; } }

@@ -760,5 +760,10 @@
   "Category IDs and names must be unique.": "分类名称不能重复。",
   "Rules use your selected AI provider to find similar transactions. Applying a category preserves transaction type. Excluded categories, pending, split and non-USD records are skipped.": "规则使用已选择的 AI 查找相似交易。应用分类会保留交易性质。扫描跳过不计入收支的分类、待入账、已拆分及非美元交易。",
   "Cash flow type": "收支类别",
-  "Filter transaction accounts": "筛选所属账户"
+  "Filter transaction accounts": "筛选所属账户",
+  "Change cash flow type for {p0}": "修改 {p0} 的收支类别",
+  "Selecting a cash flow type saves automatically": "选择收支类别后自动保存",
+  "Saving cash flow type…": "正在保存收支类别…",
+  "The cash flow type was not saved. Please retry.": "收支类别未保存，请重试。",
+  "This transaction was updated. Select the cash flow type again.": "这笔交易已更新，请重新选择收支类别。"
 }

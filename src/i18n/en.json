@@ -760,5 +760,10 @@
   "Category IDs and names must be unique.": "Category IDs and names must be unique.",
   "Rules use your selected AI provider to find similar transactions. Applying a category preserves transaction type. Excluded categories, pending, split and non-USD records are skipped.": "Rules use your selected AI provider to find similar transactions. Applying a category preserves transaction type. Excluded categories, pending, split and non-USD records are skipped.",
   "Cash flow type": "Cash flow type",
-  "Filter transaction accounts": "Filter transaction accounts"
+  "Filter transaction accounts": "Filter transaction accounts",
+  "Change cash flow type for {p0}": "Change cash flow type for {p0}",
+  "Selecting a cash flow type saves automatically": "Selecting a cash flow type saves automatically",
+  "Saving cash flow type…": "Saving cash flow type…",
+  "The cash flow type was not saved. Please retry.": "The cash flow type was not saved. Please retry.",
+  "This transaction was updated. Select the cash flow type again.": "This transaction was updated. Select the cash flow type again."
 }

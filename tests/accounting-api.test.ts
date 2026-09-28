@@ -159,3 +159,44 @@ it('sorts accounts before pagination and intersects account column filters with 
     expect((await app.inject(`/api/accounting/summary?month=2026-08&transactionAccounts=${accounts[0]}`)).json()).toMatchObject({ expenseCents: 7200 });
   } finally { await app.close(); await rm(directory, { recursive: true, force: true }); }
 });
+
+it('changes cash flow types independently, preserves source facts, and updates only the selected split', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'respect-money-inline-kind-'));
+  let app = await buildApp({ ...readConfig(), dataDir: directory });
+  try {
+    const account = (await app.inject({ method: 'POST', url: '/api/accounts/manual', payload: { name: 'Type fixture', institution: 'Test', type: 'cash' } })).json();
+    const incoming = (await app.inject({ method: 'POST', url: '/api/transactions/manual', payload: { accountId: account.id, postedDate: '2026-08-12', description: 'Fixture receipt', amount: '200', kind: 'income', category: 'travel', country: 'JP', notes: 'Keep notes' } })).json().id;
+    const detail = async () => (await app.inject(`/api/transactions/${incoming}`)).json();
+    const summary = async () => (await app.inject('/api/accounting/summary?month=2026-08')).json();
+    const original = await detail();
+    const update = { method: 'PUT' as const, url: `/api/transactions/${incoming}/overrides`, payload: { version: original.version, kind: 'refund' } };
+    expect((await app.inject(update)).statusCode).toBe(200);
+    expect((await detail()).transaction).toMatchObject({ sourceHash: original.transaction.sourceHash, category: 'travel', kind: 'refund', cashflowCents: 20000, country: 'JP', notes: 'Keep notes' });
+    expect(await summary()).toMatchObject({ incomeCents: 0, expenseCents: -20000, refundCents: 20000 });
+    expect((await app.inject(update)).statusCode).toBe(409);
+    expect((await app.inject({ ...update, payload: { version: (await detail()).version, kind: 'expense' } })).statusCode).toBe(400);
+    await app.close(); app = await buildApp({ ...readConfig(), dataDir: directory });
+    expect((await detail()).transaction.kind).toBe('refund');
+    const splitUrl = `/api/transactions/${incoming}/splits`;
+    expect((await app.inject({ method: 'PUT', url: splitUrl, payload: { version: (await detail()).version, splits: [
+      { cashflowCents: 12000, category: 'travel', country: 'JP', kind: 'income', description: 'First portion' },
+      { cashflowCents: 8000, category: 'housing', country: 'US', kind: 'income', description: 'Other portion' },
+    ] } })).statusCode).toBe(200);
+    let latest = await detail();
+    const other = latest.override.splits[1];
+    let first = { ...latest.override.splits[0], kind: 'refund' };
+    expect((await app.inject({ method: 'PUT', url: splitUrl, payload: { version: latest.version, splits: [first, other] } })).statusCode).toBe(200);
+    expect(await summary()).toMatchObject({ incomeCents: 8000, expenseCents: -12000, refundCents: 12000 });
+    latest = await detail(); first = { ...first, kind: 'review' };
+    expect((await app.inject({ method: 'PUT', url: splitUrl, payload: { version: latest.version, splits: [first, other] } })).statusCode).toBe(200);
+    expect(await summary()).toMatchObject({ incomeCents: 8000, expenseCents: 0, refundCents: 0, reviewCount: 1, reviewCents: 12000 });
+    expect((await detail()).override.splits[1]).toEqual(other);
+    latest = await detail();
+    expect((await app.inject({ method: 'PUT', url: splitUrl, payload: { version: latest.version, splits: [first, { ...other, kind: 'refund', excluded: true }] } })).statusCode).toBe(200);
+    await app.close(); app = await buildApp({ ...readConfig(), dataDir: directory });
+    expect(await summary()).toMatchObject({ incomeCents: 0, expenseCents: 0, refundCents: 0, reviewCount: 1 });
+    const rows = (await app.inject('/api/accounting/transactions?month=2026-08&mode=all')).json().rows;
+    expect(rows.find((row: { description: string }) => row.description === 'Other portion')).toMatchObject({ kind: 'refund', excluded: true, cashflowCents: 8000, category: 'housing' });
+    expect((await detail()).transaction.sourceHash).toBe(original.transaction.sourceHash);
+  } finally { await app.close(); await rm(directory, { recursive: true, force: true }); }
+});

@@ -156,7 +156,7 @@ export function createLedger(
     if (override?.splits?.length && !invalidSplits && !excluded && !brokenMatch && !signMismatch) {
       for (const split of override.splits) rows.push({ ...row, ...split, id: `${tx.id}:${split.id}`, parentId: tx.id, splitId: split.id,
         description: split.description || row.description, kind: split.kind, countrySource: 'manual',
-        classificationSource: 'manual', excluded: split.kind === 'excluded', needsReview: false });
+        classificationSource: 'manual', excluded: Boolean(split.excluded || split.kind === 'excluded'), needsReview: split.kind === 'review' });
     } else rows.push(row);
   }
   return rows.map(row => applyCategoryPolicy(row, settings)).sort((a, b) => b.postedDate.localeCompare(a.postedDate) || a.id.localeCompare(b.id));

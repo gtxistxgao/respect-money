@@ -49,7 +49,8 @@ export type SourceTransaction = {
 export const splitSchema = z.object({
   id: z.string().optional(), description: z.string().max(200).default(''),
   cashflowCents: z.number().int().safe(), category: categorySchema, country: countrySchema,
-  kind: z.enum(['income', 'expense', 'refund', 'excluded']),
+  kind: z.enum(['income', 'expense', 'refund', 'review', 'excluded']),
+  excluded: z.boolean().optional(),
 });
 export type Split = z.infer<typeof splitSchema>;
 export const overrideSchema = z.object({

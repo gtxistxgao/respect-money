@@ -7,7 +7,7 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from '@tanstack/react-table';
 import { ArrowDownLeft, ArrowUpRight, ChevronLeft, ChevronRight, Filter, Plus, RefreshCw, Pencil, Split, WalletCards, ArrowDownUp, Search, X } from 'lucide-react';
-import { type Account, type LedgerRow, type MonthSummary, countryOptions, countryLabel, kindLabels, isAwaitingReview, today } from '../../../shared/models.js';
+import { type Account, type LedgerRow, type MonthSummary, countryOptions, countryLabel, isAwaitingReview, today } from '../../../shared/models.js';
 import { api, money, refreshData, type SettingsStatus } from '../../api.js';
 import { ErrorNotice, Loading } from '../../components.js';
 import { CategoryIcon } from '../../CategoryIcon.js';
@@ -16,6 +16,7 @@ import { JobStatus, SyncDialog } from '../sync/SyncDialog.js';
 import { DuplicateReview, type DuplicateGroup } from './DuplicateReview.js';
 import { CategoryBreakdown } from '../overview/CategoryBreakdown.js';
 import { InlineCategory } from './InlineCategory.js';
+import { InlineKind } from './InlineKind.js';
 import { FilterMenu } from './FilterMenu.js';
 import { resetTableFilters } from './filters.js';
 
@@ -70,7 +71,7 @@ export function Accounting() {
       return <span className={`amount-cell ${incoming ? 'income-text' : ''}`}>{sign}{money(Math.abs(cashflowCents), currency)}</span>;
     } },
     { id: 'category', accessorKey: 'category', cell: ({ row }) => <InlineCategory row={row.original} /> },
-    { id: 'kind', accessorKey: 'kind', cell: ({ row }) => <div className="cashflow-type-cell"><span>{t(kindLabels[row.original.kind])}</span>{(row.original.excluded || row.original.categoryExcluded) && <small title={t('Excluded from income and spending')}>{t('Excluded from income and spending')}</small>}</div> },
+    { id: 'kind', accessorKey: 'kind', cell: ({ row }) => <InlineKind row={row.original} /> },
     { id: 'country', accessorKey: 'country', cell: ({ row }) => <span className="location-cell">{countryLabel(row.original.country)}{row.original.countrySource === 'default' && <small>{t("(default)")}</small>}</span> },
     { id: 'actions', cell: ({ row }) => <div className="row-actions"><button className="icon-button" aria-label={t("Edit {p0}", { p0: row.original.description })} onClick={() => setDialog({ type: 'transaction', id: row.original.parentId })}><Pencil size={15} /></button><button className="icon-button" aria-label={t("Split {p0}", { p0: row.original.description })} onClick={() => setDialog({ type: 'split', id: row.original.parentId })}><Split size={15} /></button></div> },
   ]; }, [locale, mode]);
