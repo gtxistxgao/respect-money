@@ -36,10 +36,12 @@ test('compares monthly cash flow, selects categories and handles zero income on 
   await expect(cashflow).toContainText('60%');
   await expect(cashflow).toContainText('$5,000.00');
   const category = page.getByRole('region', { name: tr("Spending by category"), exact: true });
-  await expect(category.getByRole('link', { name: new RegExp(tr("Housing")) })).toContainText('57.1%');
+  await expect(category.getByRole('link', { name: new RegExp(tr("Housing")) })).toContainText('66.7%');
+  await expect(category.getByRole('link', { name: new RegExp(tr('Dining')) })).toContainText('US$500.00');
+  await expect(category.getByRole('link', { name: new RegExp(tr('Dining')) })).toContainText('16.7%');
   const housingShare = category.getByRole('meter', { name: tr('Housing'), exact: true });
-  await expect(housingShare).toHaveAttribute('aria-valuetext', '57.1%');
-  expect(await housingShare.evaluate((element) => element.firstElementChild!.getBoundingClientRect().width / element.getBoundingClientRect().width)).toBeCloseTo(2000 / 3500, 2);
+  await expect(housingShare).toHaveAttribute('aria-valuetext', '66.7%');
+  expect(await housingShare.evaluate((element) => element.firstElementChild!.getBoundingClientRect().width / element.getBoundingClientRect().width)).toBeCloseTo(2000 / 3000, 2);
   await page.screenshot({ path: 'test-results/overview-desktop.png', fullPage: true, animations: 'disabled' });
   await page.goto(`/?accounts=${account.id}&month=2026-02`);
   await expect(category.getByRole('meter')).toHaveCount(denseCategories.length);
@@ -62,7 +64,9 @@ test('compares monthly cash flow, selects categories and handles zero income on 
   await expect(category.getByRole('link', { name: new RegExp(tr("Travel")) })).toContainText('100%');
   await selectOption(page.getByLabel(tr("View month"), { exact: true }), '2026-08');
   await expect(cashflow).toContainText('-US$50.00');
-  await expect(category).toContainText(tr("No eligible spending this month."));
+  await expect(category.getByRole('link', { name: new RegExp(tr('Shopping')) })).toContainText('-US$50.00');
+  await expect(category).toContainText(tr('Net refund'));
+  await expect(category.getByRole('meter', { name: tr('Shopping'), exact: true })).toHaveAttribute('aria-valuenow', '0');
   await page.getByRole('button', { name: new RegExp("^" + tr("{p0}-{p1}", { p0: "2026", p1: "6" }) + "，") }).click();
   await category.getByRole('link', { name: new RegExp(tr("Housing")) }).click();
   await expect(page).toHaveURL(/categories=housing/);

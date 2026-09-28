@@ -5,6 +5,28 @@ import { join } from 'node:path';
 import { buildApp } from '../src/server/app.js';
 import { readConfig } from '../src/server/config.js';
 
+it('corrects travel income to a refund and includes it in category details and net spending', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'respect-money-refund-'));
+  let app = await buildApp({ ...readConfig(), dataDir: directory });
+  try {
+    const account = (await app.inject({ method: 'POST', url: '/api/accounts/manual', payload: { name: 'Refund fixture', institution: 'Test', type: 'credit' } })).json();
+    const base = { accountId: account.id, postedDate: '2026-08-15', category: 'travel', country: 'US' };
+    expect((await app.inject({ method: 'POST', url: '/api/transactions/manual', payload: { ...base, description: 'Fictional tickets', amount: '1000.00', kind: 'expense' } })).statusCode).toBe(201);
+    const incoming = await app.inject({ method: 'POST', url: '/api/transactions/manual', payload: { ...base, description: 'Fictional ticket refund', amount: '250.00', kind: 'income' } });
+    expect(incoming.statusCode).toBe(201);
+    const detail = (await app.inject(`/api/transactions/${incoming.json().id}`)).json();
+    expect((await app.inject({ method: 'PUT', url: `/api/transactions/${incoming.json().id}/overrides`, payload: { version: detail.version, category: 'travel', kind: 'refund' } })).statusCode).toBe(200);
+    await app.close(); app = await buildApp({ ...readConfig(), dataDir: directory });
+    const query = `month=2026-08&accounts=${account.id}`;
+    const summary = (await app.inject(`/api/accounting/summary?${query}`)).json();
+    expect(summary).toMatchObject({ incomeCents: 0, expenseCents: 75000, grossExpenseCents: 100000, refundCents: 25000, categories: [{ category: 'travel', expenseCents: 100000, refundCents: 25000 }] });
+    const travel = (await app.inject(`/api/accounting/transactions?${query}&mode=expense&categories=travel`)).json();
+    expect(travel).toMatchObject({ total: 2, subtotalCents: 75000 });
+    expect(travel.rows.find((row: { kind: string }) => row.kind === 'refund')).toMatchObject({ category: 'travel', cashflowCents: 25000, needsReview: false });
+    expect((await app.inject(`/api/accounting/transactions?${query}&mode=income`)).json().total).toBe(0);
+  } finally { await app.close(); await rm(directory, { recursive: true, force: true }); }
+});
+
 it('lists uncategorized cash flows for review, preserves totals, and removes categorized rows durably', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'respect-money-review-'));
   let app = await buildApp({ ...readConfig(), dataDir: directory });

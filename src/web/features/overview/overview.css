@@ -63,6 +63,7 @@
 .category-item-values { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; margin-top: auto; font-size: 11px; font-variant-numeric: tabular-nums; }
 .category-item-values > span { overflow-wrap: anywhere; }
 .category-item-values strong { color: var(--category-color); font-weight: 500; }
+.category-refund-note { font-size: 10px; line-height: 1.5; color: var(--muted); overflow-wrap: anywhere; }
 .category-share-track { display: block; height: 3px; border-radius: 2px; background: var(--border); overflow: hidden; }
 .category-share-track > span { display: block; height: 100%; border-radius: inherit; background: var(--category-color); }
 @container (min-width: 600px) { .category-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

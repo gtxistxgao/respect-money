@@ -43,7 +43,7 @@ export function InlineCategory({ row }: { row: LedgerRow }) {
             {categoryOptions.map(([id, label]) => <option key={id} value={id}>{t(label)}</option>)}
           </Select>
         </div>
-        {!['income', 'expense', 'refund'].includes(row.kind) && <small>{nonCashflowCategoryKind(row.category) === row.kind ? t("Excluded from income and spending") : kindLabels[row.kind]}</small>}
+        {row.kind !== 'expense' && <small>{nonCashflowCategoryKind(row.category) === row.kind ? t("Excluded from income and spending") : t(kindLabels[row.kind])}</small>}
       </div>
       {saving ? <LoaderCircle className="spin" size={13} aria-hidden="true" /> : row.classificationSource === 'manual' && <Check size={13} aria-label={t("Manually confirmed")} />}
       <span className="sr-only" role="status">{saving ? t("Saving category…") : ''}</span>

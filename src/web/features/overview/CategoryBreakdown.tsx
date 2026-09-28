@@ -6,6 +6,7 @@ import { categoryLabel, type Category, type MonthSummary } from '../../../shared
 import { money } from '../../api.js';
 import { CategoryIcon } from '../../CategoryIcon.js';
 import { resetTableFilters } from '../accounting/filters.js';
+import { netCategoryShares } from './category-shares.js';
 
 const colors: Record<Category, string> = {
   dining: 'var(--orange)', groceries: 'var(--accent)', housing: 'var(--pink)', transport: 'var(--cyan)',
@@ -21,11 +22,11 @@ export function CategoryBreakdown({ data, accounts = '' }: { data: MonthSummary;
   const location = useLocation();
   const inLedger = location.pathname === '/';
   const selectedCategories = inLedger && (params.get('mode') || 'expense') === 'expense' ? (params.get('categories') || '').split(',') : [];
-  const categories = data.categories.filter((item) => item.expenseCents > 0);
+  const categories = netCategoryShares(data.categories);
   return <section className="category-panel" aria-labelledby={titleId}>
-    <div className="chart-heading"><div><h2 id={titleId}>{t("Spending by category")}</h2><p>{monthLabel(data.month)}  {t("· Based on spending before refunds")}</p></div><span className="currency-pill">USD</span></div>
+    <div className="chart-heading"><div><h2 id={titleId}>{t("Spending by category")}</h2><p>{monthLabel(data.month)}  {t("· Based on spending after refunds")}</p></div><span className="currency-pill">USD</span></div>
     {categories.length ? <ul className="category-grid" aria-label={t("Category spending amounts and shares")}>{categories.map((item) => {
-      const share = data.grossExpenseCents > 0 ? item.expenseCents / data.grossExpenseCents : 0;
+      const share = item.share;
       const percent = Math.min(100, Math.max(0, share * 100));
       const selected = selectedCategories.includes(item.category);
       const query = resetTableFilters(inLedger ? params : new URLSearchParams());
@@ -36,12 +37,13 @@ export function CategoryBreakdown({ data, accounts = '' }: { data: MonthSummary;
         <CategoryIcon className="category-icon" category={item.category} size={36} />
         <span className="category-item-content">
           <span className="category-item-heading"><span className="category-name">{categoryLabel(item.category)}</span>{selected ? <Check size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}</span>
-          <span className="category-item-values"><span>{money(item.expenseCents)}</span><strong>{percentage(share)}</strong></span>
+          <span className="category-item-values"><span>{money(item.netExpenseCents)}</span><strong>{item.netExpenseCents < 0 ? t('Net refund') : percentage(share)}</strong></span>
           <span className="category-share-track" role="meter" aria-label={categoryLabel(item.category)} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-valuetext={percentage(share)}><span style={{ width: `${percent}%` }} /></span>
+          {item.refundCents > 0 && <span className="category-refund-note">{t('Refunds deducted: {amount}', { amount: money(item.refundCents) })}</span>}
         </span>
       </Link></li>;
     })}</ul> : <div className="chart-empty"><p>{data.transactionCount ? t("No eligible spending this month.") : t("No received transactions this month.")}</p></div>}
     <div className="category-footnote"><span>{t("Gross spending")} <strong>{money(data.grossExpenseCents)}</strong></span><span>{t("Received refunds")} <strong>{money(data.refundCents)}</strong></span><span>{t("Net spending")} <strong>{money(data.expenseCents)}</strong></span></div>
-    <p className="chart-note">{t("Refunds are shown separately and excluded from category shares. Select a category to view its transactions.")}</p>
+    <p className="chart-note">{t("Refunds reduce spending in their category. Shares use positive net spending; net refunds are shown separately. Select a category to view purchases and refunds.")}</p>
   </section>;
 }

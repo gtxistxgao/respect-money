@@ -726,5 +726,9 @@
   "Provider changes are saved automatically. Save other changes with Save settings.": "Provider changes are saved automatically. Save other changes with Save settings.",
   "The model returned an investment transaction category that conflicts with the transaction type. Results were not published.": "The model returned an investment transaction category that conflicts with the transaction type. Results were not published.",
   "Switch to light theme": "Switch to light theme",
-  "Switch to dark theme": "Switch to dark theme"
+  "Switch to dark theme": "Switch to dark theme",
+  "· Based on spending after refunds": "· Based on spending after refunds",
+  "Net refund": "Net refund",
+  "Refunds deducted: {amount}": "Refunds deducted: {amount}",
+  "Refunds reduce spending in their category. Shares use positive net spending; net refunds are shown separately. Select a category to view purchases and refunds.": "Refunds reduce spending in their category. Shares use positive net spending; net refunds are shown separately. Select a category to view purchases and refunds."
 }

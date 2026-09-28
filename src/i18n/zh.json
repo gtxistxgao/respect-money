@@ -726,5 +726,9 @@
   "Provider changes are saved automatically. Save other changes with Save settings.": "服务提供方切换后自动保存。其他修改请点击“保存设置”。",
   "The model returned an investment transaction category that conflicts with the transaction type. Results were not published.": "模型返回的投资交易分类与交易类型冲突，结果未发布。",
   "Switch to light theme": "切换为浅色主题",
-  "Switch to dark theme": "切换为深色主题"
+  "Switch to dark theme": "切换为深色主题",
+  "· Based on spending after refunds": "· 按扣除退款后的净支出统计",
+  "Net refund": "净退款",
+  "Refunds deducted: {amount}": "已扣除退款：{amount}",
+  "Refunds reduce spending in their category. Shares use positive net spending; net refunds are shown separately. Select a category to view purchases and refunds.": "退款抵扣对应分类的支出。占比按正净支出计算，净退款单独显示。点击分类可查看支出和退款明细。"
 }
