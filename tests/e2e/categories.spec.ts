@@ -3,7 +3,7 @@ import { translate } from '../../src/i18n/index.js';
 import { selectOption } from './select.js';
 const tr = (key: string) => translate('zh', key);
 
-test('configures a category and stacks spending, income and refund cards with independent details', async ({ page, request }) => {
+test('configures a category and stacks spending, income, refund and balance cards with independent details', async ({ page, request }) => {
   await page.goto('/settings#categories');
   const section = page.locator('#categories');
   await section.getByRole('button', { name: tr('Add category'), exact: true }).click();
@@ -22,13 +22,18 @@ test('configures a category and stacks spending, income and refund cards with in
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 900 });
     const cards = page.locator('.summary-grid > .summary-panel');
-    await expect(cards).toHaveCount(3);
+    await expect(cards).toHaveCount(4);
     await expect(cards.nth(0)).toContainText(tr('Total spending'));
     await expect(cards.nth(1)).toContainText(tr('Total income'));
     await expect(cards.nth(2)).toContainText(tr('Total refunds'));
-    const bounds = await Promise.all([0, 1, 2].map(index => cards.nth(index).boundingBox()));
+    await expect(cards.nth(3)).toContainText(tr('Monthly balance'));
+    await expect(cards.nth(3)).toContainText('$70.00');
+    await expect(cards.nth(3)).toHaveClass(/positive/);
+    const bounds = await Promise.all([0, 1, 2, 3].map(index => cards.nth(index).boundingBox()));
     expect(bounds[0]!.y + bounds[0]!.height).toBeLessThan(bounds[1]!.y);
     expect(bounds[1]!.y + bounds[1]!.height).toBeLessThan(bounds[2]!.y);
+    expect(bounds[2]!.y + bounds[2]!.height).toBeLessThan(bounds[3]!.y);
+    expect(bounds[2]!.width).toBe(bounds[3]!.width);
     expect(bounds[0]!.x).toBe(bounds[1]!.x);
     expect(bounds[1]!.width).toBe(bounds[2]!.width);
   }

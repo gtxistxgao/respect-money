@@ -194,8 +194,6 @@ textarea { resize: vertical; }
 .summary-caption { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--subtle); font-size: 11px; line-height: 1.6; }
 .summary-caption span { display: flex; align-items: center; gap: 2px; color: var(--orange); white-space: nowrap; }
 .income-panel .summary-caption span { color: var(--accent); }
-.net-line { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-top: 12px; color: var(--subtle); font-size: 11px; line-height: 1.7; }
-.net-line strong { color: var(--pink); font-size: 15px; font-weight: 600; margin-left: 12px; font-variant-numeric: tabular-nums; }
 
 /* Transaction table and column filters. */
 .transactions-section { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
@@ -373,7 +371,6 @@ textarea { resize: vertical; }
   .summary-panel { padding: 12px 14px; }
   .summary-caption { display: block; }
   .summary-caption span { margin-top: 7px; }
-  .net-line > span:last-child { max-width: 190px; text-align: right; }
 }
 @media (max-width: 760px) {
   .app-sidebar { position: static; width: 100%; padding: 10px 12px; border-right: 0; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 10px; }
@@ -421,9 +418,6 @@ textarea { resize: vertical; }
   .summary-symbol svg { width: 17px; height: 17px; }
   .summary-panel strong { font-size: 24px; letter-spacing: -.8px; margin: 6px 0 8px; }
   .summary-caption { font-size: 10px; }
-  .net-line { flex-direction: column; align-items: flex-start; gap: 5px; margin-top: 16px; font-size: 10px; }
-  .net-line strong { font-size: 14px; }
-  .net-line > span:last-child { max-width: none; text-align: left; }
   .table-toolbar { padding: 0 10px 6px; min-height: 44px; gap: 0; flex-wrap: wrap; }
   .table-toolbar .table-count { margin-left: auto; }
   .table-tabs { gap: 12px; width: 100%; min-width: 0; justify-content: space-between; }
@@ -503,7 +497,7 @@ textarea { resize: vertical; }
 .transaction-table tbody tr:hover { background: var(--surface-raised); }
 .transaction-table tbody tr:hover td.ledger-col-amount { background: var(--amount-header); }
 .merchant-icon svg { width: 16px; height: 16px; }
-.date-cell, .net-line strong, .table-footer strong { font-family: var(--font-numeric); }
+.date-cell, .table-footer strong { font-family: var(--font-numeric); }
 @media (max-width: 760px) {
   :root { font-size: 12px; }
   .transaction-table { min-width: 884px; table-layout: fixed; font-size: 11px; }
@@ -805,3 +799,10 @@ textarea { resize: vertical; }
 .refund-panel { border-top-color: var(--cyan); }
 .refund-panel strong, .refund-panel .summary-caption span { color: var(--cyan); }
 .refund-panel.selected { border-color: var(--cyan); }
+
+.balance-panel { --balance-color: var(--muted); background: linear-gradient(115deg, color-mix(in srgb, var(--balance-color) 12%, transparent), transparent), var(--surface-raised); }
+.balance-panel.positive { --balance-color: var(--accent); }
+.balance-panel.negative { --balance-color: var(--danger); }
+.balance-panel, .balance-panel:hover { border-color: color-mix(in srgb, var(--balance-color) 45%, var(--line)); border-top-color: var(--balance-color); }
+.balance-panel > strong, .balance-panel .summary-label { color: var(--balance-color); }
+.balance-symbol { background: color-mix(in srgb, var(--balance-color) 12%, transparent); }

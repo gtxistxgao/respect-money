@@ -139,7 +139,7 @@ Totals include posted USD transactions from enabled accounts. Pending, non-USD, 
 | Securities trade or automatic reinvestment | Excluded by default; configurable per category |
 | Split purchase | Count the split rows once; their sum must equal the original amount |
 
-Monthly totals depend on the selected month and accounts. Column filters have a separate subtotal. Category shares use spending after refunds. The monthly cards stack total spending, total income and total refunds; refunds still offset spending and are never added to income. The All transactions view also includes excluded activity, so its net cash flow is not the same as income minus spending.
+Monthly totals depend on the selected month and accounts. Column filters have a separate subtotal. Category shares use spending after refunds. The monthly cards stack total spending, total income, total refunds and monthly balance (green when positive, red when negative); refunds still offset spending and are never added to income. The All transactions view also includes excluded activity, so its net cash flow is not the same as income minus spending.
 
 Bank facts are preserved. Manual categories, countries, notes, exclusions, and splits survive synchronization and automatic classification. If a bank changes an amount that no longer matches a split, the transaction requires review. Possible duplicates between manual and imported records require explicit confirmation; the manual original is retained.
 
