@@ -759,5 +759,6 @@
   "Uncategorized must remain available.": "Uncategorized must remain available.",
   "Category IDs and names must be unique.": "Category IDs and names must be unique.",
   "Rules use your selected AI provider to find similar transactions. Applying a category preserves transaction type. Excluded categories, pending, split and non-USD records are skipped.": "Rules use your selected AI provider to find similar transactions. Applying a category preserves transaction type. Excluded categories, pending, split and non-USD records are skipped.",
-  "Cash flow type": "Cash flow type"
+  "Cash flow type": "Cash flow type",
+  "Filter transaction accounts": "Filter transaction accounts"
 }

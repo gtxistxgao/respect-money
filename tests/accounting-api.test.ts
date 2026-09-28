@@ -126,3 +126,36 @@ it.each(['internal_transfer', 'investment_transaction'] as const)('excludes the 
     expect((await app.inject('/api/accounting/summary?month=2026-06')).json()).toMatchObject({ incomeCents: 7500, expenseCents: 3000 });
   } finally { await app.close(); await rm(directory, { recursive: true, force: true }); }
 });
+
+it('sorts accounts before pagination and intersects account column filters with other filters', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'respect-money-account-column-'));
+  const app = await buildApp({ ...readConfig(), dataDir: directory });
+  try {
+    const accounts: string[] = [];
+    for (const [name, mask] of [['Alpha card', '1111'], ['Alpha card', '2222'], ['Zulu card', '9999'], ['Disabled card', '0000']]) {
+      const response = await app.inject({ method: 'POST', url: '/api/accounts/manual', payload: { name, mask, institution: 'Fixture bank', type: 'credit' } });
+      expect(response.statusCode).toBe(201); accounts.push(response.json().id);
+    }
+    for (const [index, amount, kind, category] of [[2, '30', 'expense', 'dining'], [1, '3', 'refund', 'travel'], [0, '10', 'expense', 'dining'], [1, '20', 'expense', 'travel'], [0, '15', 'expense', 'travel'], [3, '5', 'expense', 'travel']] as const) {
+      expect((await app.inject({ method: 'POST', url: '/api/transactions/manual', payload: { accountId: accounts[index], postedDate: '2026-08-12', description: `Account column fixture ${kind}`, amount, kind, category, country: 'US' } })).statusCode).toBe(201);
+    }
+    expect((await app.inject({ method: 'PATCH', url: `/api/accounts/${accounts[3]}`, payload: { enabled: false } })).statusCode).toBe(200);
+    const rows = async (query: Record<string, string>) => (await app.inject(`/api/accounting/transactions?${new URLSearchParams({ month: '2026-08', mode: 'expense', ...query })}`)).json();
+    const ascending = await rows({ sort: 'account', direction: 'asc' });
+    expect(ascending.rows.map((row: { accountId: string }) => row.accountId)).toEqual([accounts[0], accounts[0], accounts[1], accounts[1], accounts[2]]);
+    expect(ascending).toMatchObject({ total: 5, subtotalCents: 7200 });
+    const descending = await rows({ sort: 'account', direction: 'desc' });
+    expect(descending.rows.map((row: { accountId: string }) => row.accountId)).toEqual([accounts[2], accounts[1], accounts[1], accounts[0], accounts[0]]);
+    const paginated = await rows({ sort: 'account', direction: 'asc', pageSize: '2', page: '2' });
+    expect(paginated).toMatchObject({ total: 5, subtotalCents: 7200, page: 2 });
+    expect(paginated.rows.map((row: { id: string }) => row.id)).toEqual(ascending.rows.slice(2, 4).map((row: { id: string }) => row.id));
+    expect(await rows({ transactionAccounts: `${accounts[0]},${accounts[2]}` })).toMatchObject({ total: 3, subtotalCents: 5500 });
+    expect(await rows({ transactionAccounts: `${accounts[0]},${accounts[1]}`, categories: 'travel', min: '14', q: 'expense', countries: 'US' })).toMatchObject({ total: 2, subtotalCents: 3500 });
+    const intersection = await rows({ accounts: `${accounts[1]},${accounts[2]}`, transactionAccounts: `${accounts[0]},${accounts[1]}` });
+    expect(intersection).toMatchObject({ total: 2, subtotalCents: 1700 });
+    expect(intersection.rows.every((row: { accountId: string }) => row.accountId === accounts[1])).toBe(true);
+    expect(await rows({ transactionAccounts: accounts[1], mode: 'refund' })).toMatchObject({ total: 1, subtotalCents: 300 });
+    for (const id of [accounts[3], 'missing-account']) expect(await rows({ transactionAccounts: id })).toMatchObject({ total: 0, subtotalCents: 0 });
+    expect((await app.inject(`/api/accounting/summary?month=2026-08&transactionAccounts=${accounts[0]}`)).json()).toMatchObject({ expenseCents: 7200 });
+  } finally { await app.close(); await rm(directory, { recursive: true, force: true }); }
+});

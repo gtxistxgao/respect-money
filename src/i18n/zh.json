@@ -759,5 +759,6 @@
   "Uncategorized must remain available.": "必须保留「未分类」。",
   "Category IDs and names must be unique.": "分类名称不能重复。",
   "Rules use your selected AI provider to find similar transactions. Applying a category preserves transaction type. Excluded categories, pending, split and non-USD records are skipped.": "规则使用已选择的 AI 查找相似交易。应用分类会保留交易性质。扫描跳过不计入收支的分类、待入账、已拆分及非美元交易。",
-  "Cash flow type": "收支类别"
+  "Cash flow type": "收支类别",
+  "Filter transaction accounts": "筛选所属账户"
 }

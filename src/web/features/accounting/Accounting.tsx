@@ -34,12 +34,15 @@ export function Accounting() {
   const status = useQuery({ queryKey: ['status'], queryFn: () => api<SettingsStatus>('/settings/status'), refetchInterval: (query) => query.state.data?.jobs.some((job) => ['queued', 'fetching', 'classifying', 'publishing'].includes(job.status)) ? 1000 : 5000 });
   const duplicates = useQuery({ queryKey: ['duplicates', month], queryFn: () => api<DuplicateGroup[]>(`/accounting/duplicates?month=${month}`) });
   const accountFilter = params.get('accounts') || '';
+  const transactionAccountOptions = (accounts.data || []).filter(account => account.enabled && (!accountFilter || accountFilter.split(',').includes(account.id)))
+    .sort((a, b) => a.name.localeCompare(b.name) || a.mask.localeCompare(b.mask) || a.institution.localeCompare(b.institution) || a.id.localeCompare(b.id))
+    .map(account => [account.id, `${account.name}${account.mask ? ` · ${account.mask}` : ''} · ${account.institution}`] as const);
   const summary = useQuery({ queryKey: ['summary', month, accountFilter], queryFn: () => api<MonthSummary>(`/accounting/summary?${new URLSearchParams({ month, ...(accountFilter ? { accounts: accountFilter } : {}) })}`) });
   const availableSummary = summary.data && !(summary.data.incompleteAccounts.length && summary.data.transactionCount === 0) ? summary.data : undefined;
   const query = new URLSearchParams(params); query.set('month', month); query.set('mode', mode);
   const transactions = useQuery({ queryKey: ['transactions', query.toString()], queryFn: () => api<Results>(`/accounting/transactions?${query}`), placeholderData: keepPreviousData });
   function change(key: string, value: string) {
-    setParams((previous) => { const next = new URLSearchParams(previous); if (value) next.set(key, value); else next.delete(key); if (key !== 'page') next.delete('page'); return next; });
+    setParams((previous) => { const next = new URLSearchParams(previous); if (value) next.set(key, value); else next.delete(key); if (key !== 'page') next.delete('page'); if (key === 'accounts') next.delete('transactionAccounts'); return next; });
   }
   function toggleSummary(target: 'expense' | 'income' | 'refund') {
     setParams((previous) => {
@@ -51,7 +54,7 @@ export function Accounting() {
     });
   }
   function sort(column: string) {
-    setParams((previous) => { const next = new URLSearchParams(previous); next.set('sort', column); next.set('direction', previous.get('sort') === column && previous.get('direction') === 'asc' ? 'desc' : 'asc'); return next; });
+    setParams((previous) => { const next = new URLSearchParams(previous); next.set('sort', column); next.delete('page'); next.set('direction', previous.get('sort') === column && previous.get('direction') === 'asc' ? 'desc' : 'asc'); return next; });
   }
   const columns = useMemo<ColumnDef<LedgerRow>[]>(() => {
     void locale; // Labels and currency formatting must refresh when the language changes.
@@ -74,7 +77,7 @@ export function Accounting() {
   // React Compiler is not enabled; TanStack Table owns its row model memoization.
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({ data: transactions.data?.rows || emptyRows, columns, getRowId: (row) => row.id, getCoreRowModel: getCoreRowModel() });
-  const filtered = ['q', 'categories', 'countries', 'from', 'to', 'min', 'max'].some((key) => params.has(key));
+  const filtered = ['q', 'categories', 'countries', 'transactionAccounts', 'from', 'to', 'min', 'max'].some((key) => params.has(key));
   return <>
     <main className="accounting-main">
       <div className="page-heading"><div><div className="breadcrumb">{t('Accounting')} <span>/</span>  {t("Monthly cash flow")}</div><h1>{formatMonth(month)}</h1><p>{t("Understand every dollar coming in and going out.")}</p></div><div className="heading-actions">{status.data?.jobs[0]?.status === 'succeeded' && <JobStatus job={status.data.jobs[0]} compact />}<button className="button secondary" onClick={() => setDialog({ type: 'sync' })}><RefreshCw size={16} />{t("Sync bank data")}</button><button className="button primary" onClick={() => setDialog({ type: accounts.data?.some((a) => a.source === 'manual') ? 'transaction' : 'account' })}><Plus size={17} />{t("Add transaction")}</button></div></div>
@@ -95,11 +98,11 @@ export function Accounting() {
       {summary.data && <CategoryBreakdown data={summary.data} accounts={accountFilter} />}
       </div>
       <section className="transactions-section"><div className="table-toolbar"><div className="table-tabs"><button className={mode === 'expense' ? 'active' : ''} onClick={() => change('mode', 'expense')}>{t("Spending details")}</button><button className={mode === 'income' ? 'active' : ''} onClick={() => change('mode', 'income')}>{t("Income details")}</button><button className={mode === 'refund' ? 'active' : ''} onClick={() => change('mode', 'refund')}>{t("Refund details")}</button><button className={mode === 'review' ? 'active' : ''} onClick={() => change('mode', 'review')}>{t("Needs review")}{Boolean(summary.data?.reviewCount) && <span className="count-badge">{summary.data?.reviewCount}</span>}</button><button className={mode === 'all' ? 'active' : ''} onClick={() => change('mode', 'all')}>{t("All transactions")}</button></div><span className="table-count">{transactionCount(transactions.data?.total || 0)}</span></div>
-      {filtered && <div className="filter-status"><Filter size={14} /><span>{t("Filters applied")}</span><button onClick={() => setParams((previous) => { const next = new URLSearchParams(previous); ['q', 'categories', 'countries', 'from', 'to', 'min', 'max', 'page'].forEach((key) => next.delete(key)); return next; })}>{t("Clear filters")} <X size={13} /></button></div>}
+      {filtered && <div className="filter-status"><Filter size={14} /><span>{t("Filters applied")}</span><button onClick={() => setParams((previous) => { const next = new URLSearchParams(previous); ['q', 'categories', 'countries', 'transactionAccounts', 'from', 'to', 'min', 'max', 'page'].forEach((key) => next.delete(key)); return next; })}>{t("Clear filters")} <X size={13} /></button></div>}
       <div className="table-scroll"><table className="transaction-table"><thead><tr>
         <th><div className="column-header"><button onClick={() => sort('date')}>{t("Date")} <ArrowDownUp size={12} /></button><FilterMenu label={t("Filter dates")}><label>{t("Start date")}<input aria-label={t("Filter start date")} type="date" value={params.get('from') || ''} onChange={(e) => change('from', e.target.value)} /></label><label>{t("End date")}<input aria-label={t("Filter end date")} type="date" value={params.get('to') || ''} onChange={(e) => change('to', e.target.value)} /></label></FilterMenu></div></th>
         <th className="ledger-col-description"><div className="column-header"><button onClick={() => sort('description')}>{t("Description")} <ArrowDownUp size={12} /></button><FilterMenu label={t("Filter descriptions")}><label>{t("Description or notes")}<input aria-label={t("Filter description keywords")} placeholder={t("Search keywords")} value={params.get('q') || ''} onChange={(e) => change('q', e.target.value)} /></label></FilterMenu></div></th>
-        <th className="ledger-col-account"><div className="column-header"><span>{t("Account")}</span></div></th>
+        <th className="ledger-col-account" aria-sort={params.get('sort') === 'account' ? params.get('direction') === 'asc' ? 'ascending' : 'descending' : 'none'}><div className="column-header"><button onClick={() => sort('account')}>{t("Account")} <ArrowDownUp size={12} /></button><FilterMenu label={t("Filter transaction accounts")}><strong>{t("Account")}</strong><FilterChecks translateLabels={false} options={transactionAccountOptions} selected={params.get('transactionAccounts') || ''} onChange={value => change('transactionAccounts', value)} /></FilterMenu></div></th>
         <th className="align-right ledger-col-amount"><div className="column-header"><button onClick={() => sort('amount')}>{t("Amount")} <ArrowDownUp size={12} /></button><FilterMenu label={t("Filter amounts")}><label>{t("Minimum amount")}<input aria-label={t("Filter minimum amount")} type="number" min="0" step="0.01" value={params.get('min') || ''} onChange={(e) => change('min', e.target.value)} /></label><label>{t("Maximum amount")}<input aria-label={t("Filter maximum amount")} type="number" min="0" step="0.01" value={params.get('max') || ''} onChange={(e) => change('max', e.target.value)} /></label></FilterMenu></div></th>
         <th className="ledger-col-category"><div className="column-header"><button onClick={() => sort('category')}>{t("Category")} <ArrowDownUp size={12} /></button><FilterMenu label={t("Filter categories")}><strong>{t("Categories")}</strong><FilterChecks translateLabels={false} options={categoryOptions} selected={params.get('categories') || ''} onChange={(value) => change('categories', value)} /></FilterMenu></div></th>
         <th className="ledger-col-kind"><div className="column-header"><span>{t("Cash flow type")}</span></div></th>

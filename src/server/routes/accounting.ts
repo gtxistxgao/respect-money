@@ -11,9 +11,9 @@ import { monthSummary, overview } from '../domain/overview.js';
 
 const querySchema = z.object({
   month: monthSchema, accounts: z.string().optional(), mode: z.enum(['expense', 'income', 'refund', 'review', 'all']).default('expense'),
-  q: z.string().max(200).default(''), categories: z.string().optional(), countries: z.string().optional(),
+  q: z.string().max(200).default(''), categories: z.string().optional(), countries: z.string().optional(), transactionAccounts: z.string().optional(),
   from: dateSchema.optional(), to: dateSchema.optional(), min: z.coerce.number().nonnegative().optional(), max: z.coerce.number().nonnegative().optional(),
-  sort: z.enum(['date', 'description', 'amount', 'category']).default('date'), direction: z.enum(['asc', 'desc']).default('desc'),
+  sort: z.enum(['date', 'description', 'amount', 'category', 'account']).default('date'), direction: z.enum(['asc', 'desc']).default('desc'),
   page: z.coerce.number().int().min(1).default(1), pageSize: z.coerce.number().int().min(1).max(200).default(30),
 });
 
@@ -71,11 +71,16 @@ export async function accountingRoutes(app: FastifyInstance, repository: Reposit
     if (query.mode === 'refund') rows = rows.filter(r => r.kind === 'refund' && !r.excluded && !r.categoryExcluded && r.currency === 'USD');
     if (query.mode === 'review') rows = rows.filter(isAwaitingReview);
     rows = rows.filter((r) => (!query.q || `${r.description} ${r.merchant} ${r.notes}`.toLowerCase().includes(query.q.toLowerCase()))
+      && (!query.transactionAccounts || query.transactionAccounts.split(',').includes(r.accountId))
       && (!query.categories || query.categories.split(',').map(canonicalCategory).includes(r.category)) && (!query.countries || query.countries.split(',').includes(r.country))
       && (!query.from || r.postedDate >= query.from) && (!query.to || r.postedDate <= query.to)
       && (query.min === undefined || Math.abs(r.cashflowCents) >= cents(query.min)) && (query.max === undefined || Math.abs(r.cashflowCents) <= cents(query.max)));
-    const key = (r: LedgerRow) => query.sort === 'date' ? r.postedDate : query.sort === 'amount' ? Math.abs(r.cashflowCents) : r[query.sort];
+    const key = (r: LedgerRow) => query.sort === 'account' ? r.accountName : query.sort === 'date' ? r.postedDate : query.sort === 'amount' ? Math.abs(r.cashflowCents) : r[query.sort];
     rows.sort((a, b) => {
+      if (query.sort === 'account') {
+        const order = a.accountName.localeCompare(b.accountName) || a.accountMask.localeCompare(b.accountMask) || a.institution.localeCompare(b.institution) || a.accountId.localeCompare(b.accountId);
+        return order * (query.direction === 'asc' ? 1 : -1) || a.id.localeCompare(b.id);
+      }
       const x = key(a); const y = key(b);
       return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y))) * (query.direction === 'asc' ? 1 : -1) || a.id.localeCompare(b.id);
     });
