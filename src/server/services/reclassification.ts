@@ -1,8 +1,9 @@
+import { resolveCategories } from '../../shared/categories.js';
 import { randomUUID } from 'node:crypto';
 import { message as t, LocalizedError } from '../../i18n/index.js';
-import { confirmedCategoryKind, overrideSchema, type LedgerRow } from '../../shared/models.js';
+import { overrideSchema, type LedgerRow } from '../../shared/models.js';
 import type { ReclassificationPreview, ReclassificationRuleInput } from '../../shared/reclassification.js';
-import { AppError, normalize } from '../domain/ledger.js';
+import { AppError } from '../domain/ledger.js';
 import { PATTERN_BATCH_SIZE, matchPatternBatch, type MatchPatterns, type PatternTransaction } from '../integrations/codex/pattern-matcher.js';
 import type { Repository, RepositoryState } from '../storage/repository.js';
 
@@ -14,7 +15,7 @@ function assertAvailable(state: RepositoryState) {
 function eligible(row: LedgerRow, state: RepositoryState, rule: ReclassificationRuleInput) {
   return state.accounts.some((a) => a.id === row.accountId && a.enabled) && !row.pending && !row.removed && !row.excluded && !row.splitId && !row.splitCount
     && !state.overrides[row.parentId]?.duplicateOf && row.currency === 'USD'
-    && !['payment', 'investment', 'reinvestment', 'excluded'].includes(row.kind)
+    && !row.categoryExcluded && !['payment', 'investment', 'reinvestment', 'excluded'].includes(row.kind)
     && (rule.direction === 'all' || (rule.direction === 'outgoing' ? row.cashflowCents < 0 : row.cashflowCents > 0));
 }
 
@@ -24,6 +25,7 @@ export class ReclassificationService {
   constructor(private repository: Repository, private matcher: () => MatchPatterns) {}
   async save(input: ReclassificationRuleInput, id?: string, revision?: number) {
     return this.repository.change((state) => {
+      if (!resolveCategories(state.settings).some(item => item.id === input.category)) throw new AppError(t('Category not found. Refresh categories and retry.'), 400);
       const rules = state.reclassificationRules ??= [];
       const previous = id ? rules.find((r) => r.id === id) : undefined;
       if (id && (!previous || previous.revision !== revision)) throw new AppError(t('This rule changed. Reload it before saving.'), 409);
@@ -119,10 +121,8 @@ export class ReclassificationService {
         const row = rows.get(match.id);
         if (!row || !eligible(row, state, rule) || row.category !== match.category || row.classificationSource !== match.classificationSource) throw new AppError(t('A matched transaction changed. Scan again before applying.'), 409);
         this.repository.assertVersion(state, match.id, match.version);
-        const source = normalize(state.records[match.id]);
         const previous = state.overrides[match.id];
-        const kind = row.kind === 'review' || previous?.kind === 'review' ? confirmedCategoryKind(source.kind, rule.category, source.cashflowCents) : previous?.kind;
-        state.overrides[match.id] = overrideSchema.parse({ ...previous, category: rule.category, ...(kind ? { kind } : {}), revision: (previous?.revision || 0) + 1, updatedAt: new Date().toISOString() });
+        state.overrides[match.id] = overrideSchema.parse({ ...previous, category: rule.category, revision: (previous?.revision || 0) + 1, updatedAt: new Date().toISOString() });
       }
       return selected.size;
     });

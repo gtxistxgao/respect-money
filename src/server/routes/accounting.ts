@@ -1,15 +1,16 @@
 import { message as t } from "../../i18n/index.js";
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { categories, canonicalCategory, dateSchema, isAwaitingReview, manualAccountInput, manualTransactionInput, monthSchema, nonCashflowCategoryKind, overrideInput, splitsInput, today, type LedgerRow } from '../../shared/models.js';
+import { canonicalCategory, dateSchema, isAwaitingReview, manualAccountInput, manualTransactionInput, monthSchema, overrideInput, splitsInput, today, type LedgerRow } from '../../shared/models.js';
 import { AppError, cents, normalize } from '../domain/ledger.js';
 import type { Repository } from '../storage/repository.js';
 import { duplicateCandidates } from '../domain/duplicates.js';
 import { accountCoverage } from '../domain/coverage.js';
+import { resolveCategories } from '../../shared/categories.js';
 import { monthSummary, overview } from '../domain/overview.js';
 
 const querySchema = z.object({
-  month: monthSchema, accounts: z.string().optional(), mode: z.enum(['expense', 'income', 'review', 'all']).default('expense'),
+  month: monthSchema, accounts: z.string().optional(), mode: z.enum(['expense', 'income', 'refund', 'review', 'all']).default('expense'),
   q: z.string().max(200).default(''), categories: z.string().optional(), countries: z.string().optional(),
   from: dateSchema.optional(), to: dateSchema.optional(), min: z.coerce.number().nonnegative().optional(), max: z.coerce.number().nonnegative().optional(),
   sort: z.enum(['date', 'description', 'amount', 'category']).default('date'), direction: z.enum(['asc', 'desc']).default('desc'),
@@ -65,8 +66,9 @@ export async function accountingRoutes(app: FastifyInstance, repository: Reposit
   app.get('/api/accounting/transactions', async (request) => {
     const query = querySchema.parse(request.query);
     let rows = selectedRows(query.month, query.accounts);
-    if (query.mode === 'expense') rows = rows.filter((r) => ['expense', 'refund'].includes(r.kind) && !r.excluded && r.currency === 'USD');
-    if (query.mode === 'income') rows = rows.filter((r) => r.kind === 'income' && !r.excluded && r.currency === 'USD');
+    if (query.mode === 'expense') rows = rows.filter((r) => ['expense', 'refund'].includes(r.kind) && !r.excluded && !r.categoryExcluded && r.currency === 'USD');
+    if (query.mode === 'income') rows = rows.filter((r) => r.kind === 'income' && !r.excluded && !r.categoryExcluded && r.currency === 'USD');
+    if (query.mode === 'refund') rows = rows.filter(r => r.kind === 'refund' && !r.excluded && !r.categoryExcluded && r.currency === 'USD');
     if (query.mode === 'review') rows = rows.filter(isAwaitingReview);
     rows = rows.filter((r) => (!query.q || `${r.description} ${r.merchant} ${r.notes}`.toLowerCase().includes(query.q.toLowerCase()))
       && (!query.categories || query.categories.split(',').map(canonicalCategory).includes(r.category)) && (!query.countries || query.countries.split(',').includes(r.country))
@@ -78,7 +80,7 @@ export async function accountingRoutes(app: FastifyInstance, repository: Reposit
       return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y))) * (query.direction === 'asc' ? 1 : -1) || a.id.localeCompare(b.id);
     });
     const total = rows.length;
-    const subtotalCents = rows.filter((row) => row.currency === 'USD' && !row.excluded && (query.mode === 'review' || query.mode === 'all' || !row.needsReview)).reduce((sum, row) => sum + (query.mode === 'review' ? Math.abs(row.cashflowCents) : row.cashflowCents * (query.mode === 'expense' ? -1 : 1)), 0);
+    const subtotalCents = rows.filter((row) => row.currency === 'USD' && !row.excluded && (query.mode === 'review' || query.mode === 'all' || (!row.needsReview && !row.categoryExcluded))).reduce((sum, row) => sum + (query.mode === 'review' ? Math.abs(row.cashflowCents) : row.cashflowCents * (query.mode === 'expense' ? -1 : 1)), 0);
     if (!Number.isSafeInteger(subtotalCents)) throw new AppError(t("The filtered total exceeds the supported range."));
     const page = Math.min(query.page, Math.max(1, Math.ceil(total / query.pageSize)));
     return { rows: rows.slice((page - 1) * query.pageSize, page * query.pageSize), total, page, pageSize: query.pageSize, subtotalCents };
@@ -90,13 +92,9 @@ export async function accountingRoutes(app: FastifyInstance, repository: Reposit
     if (!record) throw new AppError(t("Transaction not found."), 404);
     const source = normalize(record);
     const effective = state.processed.find((row) => row.parentId === id && !row.splitId);
-    const saved = state.classifications[id];
-    const classification = saved?.sourceHash === source.sourceHash ? saved : undefined;
-    // Editors retain the underlying kind so saving excluded activities never reverses their cashflow.
-    const editableKind = effective && nonCashflowCategoryKind(effective.category) ? source.source === 'manual' ? source.kind : state.overrides[id]?.kind ?? classification?.kind ?? source.kind : undefined;
     const { raw: _raw, ...transaction } = source;
     void _raw;
-    return { transaction: { ...transaction, ...(effective?.sourceHash === source.sourceHash ? { kind: effective.kind === 'excluded' ? source.kind : effective.kind, category: effective.category, country: effective.country } : {}) }, editableKind, override: state.overrides[id], version: repository.version(state, id), reason: effective?.reason || '', classificationSource: effective?.classificationSource || 'rules' };
+    return { transaction: { ...transaction, ...(effective?.sourceHash === source.sourceHash ? { kind: effective.kind === 'excluded' ? source.kind : effective.kind, category: effective.category, country: effective.country } : {}) }, override: state.overrides[id], version: repository.version(state, id), reason: effective?.reason || '', classificationSource: effective?.classificationSource || 'rules' };
   });
   app.post('/api/transactions/manual', async (request, reply) => {
     const id = await repository.addManual(manualTransactionInput.parse(request.body));
@@ -106,6 +104,7 @@ export async function accountingRoutes(app: FastifyInstance, repository: Reposit
     const { id } = request.params as { id: string };
     const value = manualTransactionInput.extend({ version: z.string() }).parse(request.body);
     await repository.change((state) => {
+      if (!resolveCategories(state.settings).some(item => item.id === value.category)) throw new AppError(t('Category not found. Refresh categories and retry.'), 400);
       repository.assertVersion(state, id, value.version);
       if (state.records[id].source !== 'manual') throw new AppError(t("Original bank transactions cannot be edited directly."));
       if (!state.accounts.some((account) => account.id === value.accountId && account.source === 'manual')) throw new AppError(t("Select a manual account."));
@@ -135,7 +134,6 @@ export async function accountingRoutes(app: FastifyInstance, repository: Reposit
     await repository.editOverride(id, value.version, { splits: value.splits });
     return { ok: true };
   });
-  app.get('/api/categories', async () => categories);
   app.post('/api/accounting/publish-rules', async () => {
     // An explicit fallback lets the owner inspect newly synced records even while Codex is unavailable.
     await repository.change((state) => { state.staleAccountIds = []; });

@@ -24,7 +24,7 @@ export function removeAccounts(state: RepositoryState, ids: Set<string>, connect
   state.accounts = state.accounts.filter(a => !ids.has(a.id));
   state.processed = state.processed.filter(row => !ids.has(row.accountId));
   if (detachedDuplicates.size) {
-    const fresh = createLedger(Object.values(state.records), state.accounts, state.overrides, state.classifications, state.ranges);
+    const fresh = createLedger(Object.values(state.records), state.accounts, state.overrides, state.classifications, state.ranges, state.settings);
     state.processed = [...state.processed.filter(row => !detachedDuplicates.has(row.parentId)), ...fresh.filter(row => detachedDuplicates.has(row.parentId))];
   }
   state.staleAccountIds = state.staleAccountIds.filter(id => !ids.has(id));

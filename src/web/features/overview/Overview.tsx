@@ -52,14 +52,14 @@ export function Overview() {
       {!selected.transactionCount && <div className="notice">{t("No transactions have been received this month. This does not mean actual cash flow was zero.")}</div>}
       <div className="overview-detail-grid">
         <section className="cashflow-panel" aria-label={t("Selected month's cash flow")}><div className="chart-heading"><div><h2>{monthLabel(selected.month)}</h2><p>{t("Monthly cash flow comparison")}</p></div></div>
-          <dl className="cashflow-totals"><div><dt><i className="income-key" />{t("Income")}</dt><dd className="income-text">{selected.transactionCount ? money(selected.incomeCents) : '—'}</dd></div><div><dt><i className="expense-key" />{t("Net spending")}</dt><dd>{selected.transactionCount ? money(selected.expenseCents) : '—'}</dd></div><div className="cashflow-net"><dt>{t("Balance")}</dt><dd>{selected.transactionCount ? money(selected.netCents) : '—'}</dd></div></dl>
+          <dl className="cashflow-totals"><div><dt><i className="income-key" />{t("Income")}</dt><dd className="income-text">{selected.transactionCount ? money(selected.incomeCents) : '—'}</dd></div><div><dt>{t("Refunds")}</dt><dd className="income-text">{selected.transactionCount ? money(selected.refundCents) : '—'}</dd></div><div><dt><i className="expense-key" />{t("Net spending")}</dt><dd>{selected.transactionCount ? money(selected.expenseCents) : '—'}</dd></div><div className="cashflow-net"><dt>{t("Balance")}</dt><dd>{selected.transactionCount ? money(selected.netCents) : '—'}</dd></div></dl>
           <div className="spending-ratio"><span>{t("Net spending / income")}</span><strong className={selected.spendingIncomeRatio !== null && selected.spendingIncomeRatio > 1 ? 'over-budget' : ''}>{selected.spendingIncomeRatio === null ? '—' : percentage(selected.spendingIncomeRatio)}</strong></div>
           <div className="ratio-track" aria-hidden="true"><span style={{ width: `${Math.min(100, Math.max(0, (selected.spendingIncomeRatio || 0) * 100))}%` }} /></div>
           <p className="chart-note">{!selected.transactionCount ? t("Waiting for transaction records.") : selected.spendingIncomeRatio === null ? t("No confirmed income this month; ratio unavailable.") : selected.spendingIncomeRatio > 1 ? t("Net spending exceeded income this month.") : selected.expenseCents < 0 ? t("Received refunds exceeded spending this month.") : t("{p0} of income went toward net spending.", { p0: percentage(selected.spendingIncomeRatio) })}</p>
         </section>
         <CategoryBreakdown data={selected} accounts={accountFilter} />
       </div>
-      <p className="page-footer">{t("Only posted USD records from enabled accounts are included. Transfers, credit card payments, investment trades and uncertain cash flows are excluded.")}</p>
+      <p className="page-footer">{t("Only posted USD records from enabled accounts and included categories count toward totals. Uncertain cash flows are excluded.")}</p>
     </>}
   </main>;
 }

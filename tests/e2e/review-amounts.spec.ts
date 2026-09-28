@@ -62,9 +62,16 @@ test('shows actual incoming and outgoing signs for transactions awaiting review'
   await expect(outgoing).toHaveText('−US$50.00');
   await page.getByRole('button', { name: new RegExp('^' + tr('Needs review')) }).click();
   await selectOption(page.getByRole('combobox', { name: tr('Change category for {p0}', { p0: 'Pending outgoing' }), exact: true }), 'childcare');
+  await expect(page.locator('tbody tr')).toHaveCount(2);
+  await page.getByRole('button', { name: tr('Edit {p0}', { p0: 'Pending outgoing' }), exact: true }).click();
+  await selectOption(page.getByLabel(tr('Transaction type'), { exact: true }), 'expense');
+  await page.getByRole('button', { name: tr('Save transaction'), exact: true }).click();
   await expect(page.locator('tbody tr')).toHaveCount(1);
-  await expect(page.locator('tbody')).not.toContainText('Pending outgoing');
   await selectOption(page.getByRole('combobox', { name: tr('Change category for {p0}', { p0: 'Pending incoming' }), exact: true }), 'salary');
+  await expect(page.locator('tbody tr')).toHaveCount(1);
+  await page.getByRole('button', { name: tr('Edit {p0}', { p0: 'Pending incoming' }), exact: true }).click();
+  await selectOption(page.getByLabel(tr('Transaction type'), { exact: true }), 'income');
+  await page.getByRole('button', { name: tr('Save transaction'), exact: true }).click();
   await expect(page.locator('tbody tr')).toHaveCount(0);
   await expect(page.getByRole('button', { name: new RegExp(tr('Total spending')) })).toContainText('$50.00');
   await expect(page.getByRole('button', { name: new RegExp(tr('Total income')) })).toContainText('$75.00');
@@ -75,7 +82,8 @@ test('shows actual incoming and outgoing signs for transactions awaiting review'
   await page.reload();
   await page.getByRole('button', { name: tr('Edit {p0}', { p0: 'Dialog review fixture' }), exact: true }).click();
   await selectOption(page.getByLabel(tr('Categories'), { exact: true }), 'groceries');
-  await expect(page.getByRole('combobox', { name: tr('Transaction type'), exact: true })).toHaveAttribute('data-value', 'expense');
+  await expect(page.getByRole('combobox', { name: tr('Transaction type'), exact: true })).toHaveAttribute('data-value', 'review');
+  await selectOption(page.getByLabel(tr('Transaction type'), { exact: true }), 'expense');
   await page.getByRole('button', { name: tr('Save transaction'), exact: true }).click();
   await expect(page.locator('tbody tr')).toHaveCount(0);
   await expect(page.getByRole('button', { name: new RegExp(tr('Total spending')) })).toContainText('$70.00');

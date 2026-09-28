@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { categoryDefinitionsSchema, categoryIdSchema } from './categories.js';
 
 export const defaultUsdCnyRate = 6.7;
 export const displayConversionSchema = z.strictObject({
@@ -14,6 +15,8 @@ export function resolveDisplayConversion(value?: { displayConversion?: DisplayCo
 
 export const applicationSettingsSchema = z.strictObject({
   revision: z.number().int().nonnegative(),
+  categoryDefinitions: categoryDefinitionsSchema.optional(),
+  categoryRedirects: z.record(categoryIdSchema, categoryIdSchema).optional(),
   // Keep older stored settings unchanged; resolve the default when reading.
   usdCnyRate: z.number().positive().max(1000).optional(),
   displayConversion: displayConversionSchema.optional(),
@@ -37,6 +40,6 @@ export type PublicSettings = Omit<ApplicationSettings, 'plaidSecret'> & {
   displayConversion: DisplayConversion; usdCnyRate: number; hasPlaidSecret: boolean; defaultPrompt: string; runningPort: number;
 };
 export type ModelOption = { model: string; displayName: string; isDefault: boolean };
-export const settingsUpdateSchema = applicationSettingsSchema.omit({ revision: true }).partial().extend({
+export const settingsUpdateSchema = applicationSettingsSchema.omit({ revision: true, categoryDefinitions: true, categoryRedirects: true }).partial().extend({
   revision: z.number().int().nonnegative(), clearPlaidSecret: z.boolean().optional(),
 });

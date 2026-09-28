@@ -1,5 +1,6 @@
 import { message as t, LocalizedError } from "../../i18n/index.js";
-import { nonCashflowCategoryKind, type DateRange, type SourceTransaction } from '../../shared/models.js';
+import { type DateRange, type SourceTransaction } from '../../shared/models.js';
+import { resolveCategories, resolveCategoryId } from '../../shared/categories.js';
 import { hash, inRanges, normalize } from '../domain/ledger.js';
 import { CLASSIFIER_VERSION, toClassificationInput, validateClassifications, type ClassifyBatch, type ClassificationInput } from '../integrations/codex/classifier.js';
 import type { Repository } from '../storage/repository.js';
@@ -16,7 +17,7 @@ function needsModel(tx: SourceTransaction) {
 
 export class ClassificationService {
   readonly version: string;
-  constructor(private repository: Repository, private classifyBatch: ClassifyBatch, fingerprint: string, private provider: 'codex' | 'claude' = 'codex') { this.version = hash([CLASSIFIER_VERSION, fingerprint]); }
+  constructor(private repository: Repository, private classifyBatch: ClassifyBatch, fingerprint: string, private provider: 'codex' | 'claude' = 'codex') { this.version = hash([CLASSIFIER_VERSION, fingerprint, resolveCategories(repository.snapshot().settings)]); }
   publish: Publisher = async (accountIds, force, progress, range?: DateRange) => {
     const snapshot = this.repository.snapshot();
     const sources = Object.values(snapshot.records).map(normalize).filter((tx) => accountIds.includes(tx.accountId) && !tx.pending && !tx.removed && tx.currency === 'USD'
@@ -24,7 +25,7 @@ export class ClassificationService {
     const candidates = sources.filter((tx) => {
       const override = snapshot.overrides[tx.id];
       const reclassify = force && (!range || inRanges(tx.postedDate, [range]));
-      if (override?.excluded || override?.duplicateOf || override?.splits?.length || (override?.category && nonCashflowCategoryKind(override.category)) || (override?.kind && override.category && override.country)) return false;
+      if (override?.excluded || override?.duplicateOf || override?.splits?.length || (override?.category && !resolveCategories(snapshot.settings).find(item => item.id === override.category)?.includeInCashflow) || (override?.kind && override.category && override.country)) return false;
       if (!reclassify && override?.category && override.category !== 'uncategorized') return false;
       const cache = snapshot.classifications[tx.id];
       // Classification belongs to the transaction identity. Ordinary sync only classifies uncached work.
@@ -48,7 +49,7 @@ export class ClassificationService {
     }, false);
     let batch: (typeof batches)[number] = []; let bytes = 0;
     for (const source of candidates) {
-      const input = toClassificationInput(source, snapshot.accounts.find((a) => a.id === source.accountId)!, `r${batch.length}`);
+      const input = toClassificationInput({ ...source, category: resolveCategoryId(source.category, snapshot.settings) }, snapshot.accounts.find((a) => a.id === source.accountId)!, `r${batch.length}`);
       const length = Buffer.byteLength(JSON.stringify(input));
       if (batch.length >= 50 || bytes + length > 24000) { batches.push(batch); batch = []; bytes = 0; input.ref = 'r0'; }
       batch.push({ source, input }); bytes += length;
@@ -59,7 +60,7 @@ export class ClassificationService {
     for (const batch of batches) {
       try {
         const inputs = batch.map((item) => item.input);
-        const result = validateClassifications(await this.classifyBatch(inputs), inputs);
+        const result = validateClassifications(await this.classifyBatch(inputs), inputs, resolveCategories(snapshot.settings));
         await this.repository.change((state) => {
           for (const item of batch) {
             const raw = state.records[item.source.id];

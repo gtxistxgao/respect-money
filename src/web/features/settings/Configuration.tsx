@@ -26,7 +26,7 @@ export function useConfiguration() {
       await queryClient.cancelQueries({ queryKey: ['configuration'] });
       queryClient.setQueryData(['configuration'], value);
       setDraft(current => immediatePatch && current ? { ...current, revision: value.revision } : undefined); setSaved(true);
-      await Promise.all([queryClient.invalidateQueries({ queryKey: ['status'] }), queryClient.invalidateQueries({ queryKey: ['models'] }), queryClient.invalidateQueries({ queryKey: ['wealth'] })]);
+      await Promise.all([queryClient.invalidateQueries({ queryKey: ['status'] }), queryClient.invalidateQueries({ queryKey: ['models'] }), queryClient.invalidateQueries({ queryKey: ['wealth'] }), queryClient.invalidateQueries({ queryKey: ['categories'] })]);
     } catch (error) { setError(error); }
     finally { setSaving(false); }
   };

@@ -42,7 +42,7 @@ Source amounts, dates, descriptions, and payloads remain available. The model ca
 
 ## Categories, countries, and manual decisions
 
-Categories use stable IDs defined in `src/shared/models.ts`; labels are localized. Investment income and fees share `investments`, while their income/expense/refund types remain distinct. Legacy category IDs are normalized for compatibility.
+Categories have stable IDs and are configurable under Settings → Categories. Defaults live in `src/shared/categories.ts`; users can add, rename and delete categories, edit their AI instructions, and control whether each category contributes to cash flow. Deleting a category requires a replacement for existing transactions and rules; Uncategorized is retained. Category and income/expense/refund type are independent. The legacy `side_business_expenses` ID maps to the neutral `side_business` category. Investment income and fees share `investments`. Inclusion changes reproject the published ledger without exposing unfinished classification work or changing source amounts.
 
 Country means the actual transaction location, not the merchant headquarters or settlement currency. A Tokyo purchase settled in USD can be JP. Missing evidence defaults to US with `countrySource: default`, and the user can override it. Bank, model, default, and manual sources are distinguishable.
 

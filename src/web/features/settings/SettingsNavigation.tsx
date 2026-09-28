@@ -7,6 +7,7 @@ const sections = [
   ['currency', 'Exchange rate'],
   ['bank-connections', 'Bank connections'],
   ['accounts', 'My accounts'],
+  ['categories', 'Categories'],
   ['classification', 'Automatic classification'],
   ['reclassification', 'Reclassify'],
   ['advanced', 'Advanced settings'],

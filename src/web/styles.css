@@ -179,7 +179,7 @@ textarea { resize: vertical; }
 .overview-toolbar .select-trigger { background: var(--background); border-color: transparent; font-size: 12px; color: var(--muted); padding: 9px 12px; max-width: 260px; }
 .subtle-label { font-size: 13px; font-weight: 600; color: var(--text); }
 .currency-pill { display: inline-block; background: var(--accent-soft); color: var(--accent); border: 1px solid #3fb95026; border-radius: 4px; padding: 3px 7px; font-size: 10px; font-weight: 500; vertical-align: middle; margin-left: 8px; white-space: nowrap; }
-.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.summary-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
 .summary-panel { display: block; text-align: left; min-width: 0; background: var(--surface-raised); border: 1px solid var(--line); border-top: 2px solid var(--orange); border-radius: var(--radius); padding: 12px 16px; }
 .summary-panel:hover { border-color: var(--border); }
 .summary-panel.selected { border-color: #d9a44166; }
@@ -207,13 +207,16 @@ textarea { resize: vertical; }
 .table-count { color: var(--subtle); font-size: 11px; white-space: nowrap; }
 .count-badge { padding: 1px 5px; border-radius: 4px; background: #d9a4411a; color: var(--orange); font-size: 10px; }
 .table-scroll { max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; position: relative; scrollbar-width: thin; scrollbar-color: var(--border) var(--surface); }
-.transaction-table { border-collapse: collapse; width: 100%; min-width: 920px; table-layout: fixed; font-size: 12px; }
+.transaction-table { border-collapse: collapse; width: 100%; min-width: 1028px; table-layout: fixed; font-size: 12px; }
 .transaction-table th { padding: 9px 10px; background: var(--surface-raised); text-align: left; white-space: nowrap; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; font-weight: 500; }
 .transaction-table th:first-child, .transaction-table td:first-child { padding-left: 12px; width: 78px; }
 .transaction-table th:last-child, .transaction-table td:last-child { width: 80px; padding-right: 10px; }
 .transaction-table th.ledger-col-account { width: 170px; }
 .transaction-table th.ledger-col-amount { width: 120px; }
 .transaction-table th.ledger-col-category { width: 138px; }
+.transaction-table th.ledger-col-kind { width: 108px; }
+.cashflow-type-cell { display: grid; gap: 3px; }
+.cashflow-type-cell small { color: var(--subtle); font-size: 10px; line-height: 1.4; }
 .transaction-table th.ledger-col-country { width: 104px; }
 .column-header { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .column-header > button { display: flex; align-items: center; gap: 5px; background: transparent; border: 0; color: inherit; padding: 3px 0; font-size: inherit; white-space: nowrap; }
@@ -503,7 +506,7 @@ textarea { resize: vertical; }
 .date-cell, .net-line strong, .table-footer strong { font-family: var(--font-numeric); }
 @media (max-width: 760px) {
   :root { font-size: 12px; }
-  .transaction-table { min-width: 760px; table-layout: fixed; font-size: 11px; }
+  .transaction-table { min-width: 884px; table-layout: fixed; font-size: 11px; }
   .transaction-table th, .transaction-table td { padding: 7px 8px; }
   .transaction-table th:first-child, .transaction-table td:first-child { padding-left: 8px; width: 56px; }
   .transaction-table th.ledger-col-description { width: 150px; }
@@ -789,3 +792,16 @@ textarea { resize: vertical; }
   .wealth-navigation { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin: 0; padding: 7px 0 0; border-left: 0; border-top: 1px solid var(--line); }
   .wealth-navigation a { padding: 8px 4px; text-align: center; }
 }
+
+.category-settings-list { display: grid; gap: 8px; margin-top: 18px; }
+.category-settings-item { border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.category-settings-item summary { cursor: pointer; padding: 12px; color: var(--text); }
+.category-settings-item summary small { margin-left: 12px; color: var(--muted); }
+.category-editor { display: grid; gap: 12px; margin: 0; padding: 14px; border: 0; min-width: 0; }
+.category-editor input:not([type=checkbox]), .category-editor textarea { width: 100%; }
+.category-delete { display: grid; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.table-tabs { flex-wrap: wrap; }
+
+.refund-panel { border-top-color: var(--cyan); }
+.refund-panel strong, .refund-panel .summary-caption span { color: var(--cyan); }
+.refund-panel.selected { border-color: var(--cyan); }

@@ -1,3 +1,4 @@
+import { Categories } from './Categories.js';
 import { Reclassification } from './Reclassification.js';
 import { Select } from '../../Select.js';
 import { useConfiguration, ConfigurationFields, ConfigurationNotice } from './Configuration.js';
@@ -60,6 +61,7 @@ export function Settings() {
         { key: 'enabled', label: 'Include in ledger', value: account => Number(account.enabled), render: account => <button className={`toggle ${account.enabled ? 'on' : ''}`} role="switch" aria-checked={account.enabled} aria-label={t('Enable {p0}', { p0: account.name })} disabled={toggling.includes(account.id)} onClick={() => void toggle(account)}><span>{account.enabled && <Check size={12} />}</span></button> },
       ]} /> : <div className="settings-empty">{t("Add an account to start recording income and spending.")}</div>}
     </section>
+    <Categories busy={busy} />
     <section className="settings-section" id="classification" tabIndex={-1}><div className="section-heading"><div className="section-icon"><Terminal size={21} /></div><div><h2>{t("Automatic classification")}</h2><p>{t("Analyze transactions with your local Codex or Claude Code CLI.")}</p></div></div><div className="settings-row"><span>{status.data?.classificationProvider === 'claude' ? 'Claude Code' : 'Codex CLI'}</span><strong>{status.data?.cliVersion || t("Not detected. Install it and sign in.")}</strong></div><ConfigurationFields config={config} section="classification" busy={busy} /><div className="settings-row"><span>{t("Default history start")}</span><strong>{t("January 2026")}</strong></div><p className="muted small">{t("Choose an earlier range during synchronization. Manual categories, countries and splits are always preserved.")}</p></section>
     <Reclassification busy={busy} />
     <section className="settings-section" id="advanced" tabIndex={-1}><div className="section-heading"><div><h2>{t("Advanced settings")}</h2><p>{t("Configure the local classification process and server.")}</p></div></div><ConfigurationFields config={config} section="advanced" busy={busy} /></section>

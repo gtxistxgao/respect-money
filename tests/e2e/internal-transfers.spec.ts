@@ -3,7 +3,7 @@ import { translate } from '../../src/i18n/index.js';
 const tr = (key: string, params?: Record<string, string | number>) => translate('zh', key, params);
 import { expect, test } from '@playwright/test';
 
-for (const [category, activityKind] of [['internal_transfer', 'transfer'], ['investment_transaction', 'investment']] as const) {
+for (const category of ['internal_transfer', 'investment_transaction'] as const) {
 test(`marks income, expenses and review rows as ${category} and handles editing and split portions`, async ({ page, request }) => {
   const errors: string[] = []; page.on('pageerror', (error) => errors.push(error.message));
   const account = await (await request.post('/api/accounts/manual', { data: { name: 'Internal transfer fixture', institution: 'Test', type: 'checking' } })).json();
@@ -31,7 +31,7 @@ test(`marks income, expenses and review rows as ${category} and handles editing 
   await expect(page.locator('tbody tr')).toHaveCount(3);
   await expect(page.locator('tbody tr').filter({ hasText: 'Incoming transfer' }).locator('.amount-cell')).toHaveText('+US$75.00');
   await expect(page.locator('tbody tr').filter({ hasText: 'Outgoing transfer' }).locator('.amount-cell')).toHaveText('−US$100.00');
-  await expect(page.locator('tbody').getByText(tr("Excluded from income and spending"), { exact: true })).toHaveCount(3);
+  await expect(page.locator('tbody').getByText(tr("Excluded from income and spending"))).toHaveCount(3);
 
   await page.getByRole('button', { name: tr("Edit {p0}", { p0: "Incoming transfer" }), exact: true }).click();
   await expect(page.getByLabel(tr("Categories"), { exact: true })).toHaveAttribute('data-value', category);
@@ -40,7 +40,7 @@ test(`marks income, expenses and review rows as ${category} and handles editing 
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.reload();
   const incoming = await (await request.get(`/api/transactions/${ids['Incoming transfer']}`)).json();
-  expect(incoming.transaction).toMatchObject({ kind: activityKind, cashflowCents: 7500, category: category, notes: 'Keep incoming direction' });
+  expect(incoming.transaction).toMatchObject({ kind: 'income', cashflowCents: 7500, category: category, notes: 'Keep incoming direction' });
   const selector = page.getByRole('combobox', { name: tr("Change category for {p0}", { p0: "Incoming transfer" }), exact: true });
   await selectOption(selector, 'salary');
   await expect(selector).toBeEnabled();

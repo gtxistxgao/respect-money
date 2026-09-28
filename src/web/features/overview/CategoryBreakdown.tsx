@@ -1,8 +1,9 @@
+import { useCategories } from '../../categories.js';
 import { t, intlLocale, formatMonth } from "../../../i18n/index.js";
 import { useId, type CSSProperties } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { Check, ChevronRight } from 'lucide-react';
-import { categoryLabel, type Category, type MonthSummary } from '../../../shared/models.js';
+import { type Category, type MonthSummary } from '../../../shared/models.js';
 import { money } from '../../api.js';
 import { CategoryIcon } from '../../CategoryIcon.js';
 import { resetTableFilters } from '../accounting/filters.js';
@@ -11,12 +12,13 @@ import { netCategoryShares } from './category-shares.js';
 const colors: Record<Category, string> = {
   dining: 'var(--orange)', groceries: 'var(--accent)', housing: 'var(--pink)', transport: 'var(--cyan)',
   shopping: 'var(--chart-shopping, #c4adfa)', health: 'var(--danger)', childcare: 'var(--childcare)', entertainment: 'var(--chart-entertainment, #73cabe)', travel: 'var(--chart-travel, #56c6f6)',
-  side_business_expenses: 'var(--chart-business, #8bb8f0)', salary: 'var(--chart-salary, #6fc666)', investments: 'var(--chart-investments, #88d6b0)', interest: 'var(--chart-interest, #b5e6fb)', dividends: 'var(--chart-dividends, #e27dd7)', investment_transaction: 'var(--chart-activity, #92929f)', internal_transfer: 'var(--chart-activity, #92929f)', uncategorized: 'var(--chart-uncategorized, #acacb9)',
+  side_business: 'var(--chart-business, #8bb8f0)', salary: 'var(--chart-salary, #6fc666)', investments: 'var(--chart-investments, #88d6b0)', interest: 'var(--chart-interest, #b5e6fb)', dividends: 'var(--chart-dividends, #e27dd7)', investment_transaction: 'var(--chart-activity, #92929f)', internal_transfer: 'var(--chart-activity, #92929f)', uncategorized: 'var(--chart-uncategorized, #acacb9)',
 };
 export const percentage = (ratio: number) => new Intl.NumberFormat(intlLocale(), { style: 'percent', maximumFractionDigits: 1 }).format(ratio);
 export const monthLabel = formatMonth;
 
 export function CategoryBreakdown({ data, accounts = '' }: { data: MonthSummary; accounts?: string }) {
+  const { label: categoryLabel } = useCategories();
   const titleId = useId();
   const [params] = useSearchParams();
   const location = useLocation();
@@ -33,7 +35,7 @@ export function CategoryBreakdown({ data, accounts = '' }: { data: MonthSummary;
       query.set('month', data.month);
       if (!selected) { query.set('mode', 'expense'); query.set('categories', item.category); }
       if (accounts) query.set('accounts', accounts);
-      return <li key={item.category}><Link to={`/?${query}`} className={selected ? 'selected' : undefined} aria-current={selected ? 'true' : undefined} style={{ '--category-color': colors[item.category] } as CSSProperties}>
+      return <li key={item.category}><Link to={`/?${query}`} className={selected ? 'selected' : undefined} aria-current={selected ? 'true' : undefined} style={{ '--category-color': colors[item.category] ?? 'var(--cyan)' } as CSSProperties}>
         <CategoryIcon className="category-icon" category={item.category} size={36} />
         <span className="category-item-content">
           <span className="category-item-heading"><span className="category-name">{categoryLabel(item.category)}</span>{selected ? <Check size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}</span>
@@ -43,7 +45,5 @@ export function CategoryBreakdown({ data, accounts = '' }: { data: MonthSummary;
         </span>
       </Link></li>;
     })}</ul> : <div className="chart-empty"><p>{data.transactionCount ? t("No eligible spending this month.") : t("No received transactions this month.")}</p></div>}
-    <div className="category-footnote"><span>{t("Gross spending")} <strong>{money(data.grossExpenseCents)}</strong></span><span>{t("Received refunds")} <strong>{money(data.refundCents)}</strong></span><span>{t("Net spending")} <strong>{money(data.expenseCents)}</strong></span></div>
-    <p className="chart-note">{t("Refunds reduce spending in their category. Shares use positive net spending; net refunds are shown separately. Select a category to view purchases and refunds.")}</p>
   </section>;
 }

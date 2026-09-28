@@ -10,7 +10,7 @@ test('settings sidebar links scroll to sections and preserve deep links across r
   const navigation = page.getByRole('navigation', { name: tr('Settings'), exact: true });
   await expect(navigation).toBeVisible();
   await expect(page.getByRole('navigation', { name: tr('Month navigation') })).toHaveCount(0);
-  const sections = [['history', 'Historical data coverage'], ['language', 'Language'], ['accounts', 'My accounts'], ['bank-connections', 'Bank connections'], ['classification', 'Automatic classification']] as const;
+  const sections = [['history', 'Historical data coverage'], ['language', 'Language'], ['accounts', 'My accounts'], ['bank-connections', 'Bank connections'], ['classification', 'Automatic classification'], ['categories', 'Categories']] as const;
   for (const [id, label] of sections) {
     await navigation.getByRole('link', { name: tr(label), exact: true }).click();
     await expect(page).toHaveURL(new RegExp('/settings#' + id + '$'));

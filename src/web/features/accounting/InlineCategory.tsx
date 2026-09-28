@@ -1,11 +1,13 @@
+import { useCategories } from '../../categories.js';
 import { Select } from '../../Select.js';
 import { t } from "../../../i18n/index.js";
 import { useState } from 'react';
 import { Check, LoaderCircle } from 'lucide-react';
-import { categoryOptions, kindLabels, nonCashflowCategoryKind, type Category, type LedgerRow, type TransactionOverride } from '../../../shared/models.js';
+import { type Category, type LedgerRow, type TransactionOverride } from '../../../shared/models.js';
 import { api, refreshData } from '../../api.js';
 
 export function InlineCategory({ row }: { row: LedgerRow }) {
+  const { options: categoryOptions } = useCategories();
   const [pending, setPending] = useState<Category | null>(null);
   const [error, setError] = useState('');
   const saving = pending !== null;
@@ -40,10 +42,9 @@ export function InlineCategory({ row }: { row: LedgerRow }) {
       <div>
         <div className="category-picker">
           <Select aria-label={t("Change category for {p0}", { p0: row.description })} title={t("Selecting a category saves automatically")} value={pending ?? row.category} disabled={saving} onValueChange={(nextValue) => void save(nextValue as Category)}>
-            {categoryOptions.map(([id, label]) => <option key={id} value={id}>{t(label)}</option>)}
+            {categoryOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
           </Select>
         </div>
-        {row.kind !== 'expense' && <small>{nonCashflowCategoryKind(row.category) === row.kind ? t("Excluded from income and spending") : t(kindLabels[row.kind])}</small>}
       </div>
       {saving ? <LoaderCircle className="spin" size={13} aria-hidden="true" /> : row.classificationSource === 'manual' && <Check size={13} aria-label={t("Manually confirmed")} />}
       <span className="sr-only" role="status">{saving ? t("Saving category…") : ''}</span>

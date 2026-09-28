@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, Check, Pencil, Plus, ScanSearch, Trash2 } from 'lucide-react';
 import { t } from '../../../i18n/index.js';
-import { categoryLabel, categoryOptions } from '../../../shared/models.js';
+import { useCategories } from '../../categories.js';
 import type { ReclassificationPreview, ReclassificationRule, ReclassificationRuleInput } from '../../../shared/reclassification.js';
 import { api, money, queryClient, refreshData } from '../../api.js';
 import { ErrorNotice, Field } from '../../components.js';
@@ -12,6 +12,7 @@ const emptyRule: ReclassificationRuleInput = { example: '', category: 'uncategor
 const previewKey = ['reclassification-preview'];
 
 export function Reclassification({ busy }: { busy: boolean }) {
+  const { options: categoryOptions, label: categoryLabel } = useCategories();
   const rules = useQuery({ queryKey: ['reclassification-rules'], queryFn: () => api<ReclassificationRule[]>('/reclassification/rules') });
   const preview = useQuery({ queryKey: previewKey, queryFn: () => api<ReclassificationPreview | null>('/reclassification/previews/latest'), refetchInterval: (query) => query.state.data?.status === 'scanning' ? 1000 : false });
   const exampleInput = useRef<HTMLTextAreaElement>(null);
@@ -59,13 +60,13 @@ export function Reclassification({ busy }: { busy: boolean }) {
     <div className="reclassification-form">
       <Field label={t('Transaction examples or pattern')}><textarea ref={exampleInput} aria-label={t('Transaction examples or pattern')} rows={3} maxLength={2000} value={draft.example} disabled={disabled} placeholder={t('Example: Send to Alex Morgan, about $500. Ignore changing reference IDs.')} onChange={(event) => setDraft({ ...draft, example: event.target.value })} /></Field>
       <div className="reclassification-options">
-        <Field label={t('Target category')}><Select value={draft.category} disabled={disabled} onValueChange={(category) => setDraft({ ...draft, category: category as ReclassificationRuleInput['category'] })}>{categoryOptions.map(([id, label]) => <option key={id} value={id}>{t(label)}</option>)}</Select></Field>
+        <Field label={t('Target category')}><Select value={draft.category} disabled={disabled} onValueChange={(category) => setDraft({ ...draft, category: category as ReclassificationRuleInput['category'] })}>{categoryOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</Select></Field>
         <Field label={t('Cash flow direction')}><Select value={draft.direction} disabled={disabled} onValueChange={(direction) => setDraft({ ...draft, direction: direction as ReclassificationRuleInput['direction'] })}><option value="outgoing">{t('Money sent')}</option><option value="incoming">{t('Money received')}</option><option value="all">{t('Both directions')}</option></Select></Field>
       </div>
     </div>
     <p className="reclassification-help">{t('Paste one or more examples, or describe the recipient, recurring text and amount. Reference IDs may differ; “about” an amount allows up to 10% variation.')}</p>
     <div className="reclassification-actions"><button className="button primary" onClick={() => void save()} disabled={disabled || draft.example.trim().length < 3}><Plus size={14} />{operation === 'save' ? t('Saving…') : editing ? t('Save rule') : t('Add rule')}</button>{editing && <button className="button secondary" onClick={reset} disabled={Boolean(operation)}>{t('Cancel')}</button>}</div>
-    <p className="reclassification-help">{t('Rules are saved locally and run only when you scan. Uses your configured Codex model. Scans all months of enabled accounts; skips pending, split, excluded and non-USD records, repayments, investment trades and transactions already in the target category.')}</p>
+    <p className="reclassification-help">{t('Rules use your selected AI provider to find similar transactions. Applying a category preserves transaction type. Excluded categories, pending, split and non-USD records are skipped.')}</p>
     {busy && <p className="notice">{t('Finish synchronization and publish the ledger before reclassifying.')}</p>}
     <div className="reclassification-rules">{rules.data?.map((rule) => <article className="reclassification-rule" key={rule.id}>
       <div><p>{rule.example}</p><span className="reclassification-rule-meta">{t(rule.direction === 'outgoing' ? 'Money sent' : rule.direction === 'incoming' ? 'Money received' : 'Both directions')} <ArrowRight size={12} /> <strong>{categoryLabel(rule.category)}</strong></span></div>

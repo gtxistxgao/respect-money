@@ -1,7 +1,9 @@
 import { message as t, LocalizedError } from "../../i18n/index.js";
 import { createHash } from 'node:crypto';
 import Decimal from 'decimal.js';
-import { categorySchema, confirmedCategoryKind, dateSchema, isAwaitingReview, kindSchema, nonCashflowCategoryKind, type Account, type Classification, type DateRange, type LedgerRow, type RawRecord, type SourceTransaction, type Summary, type TransactionOverride } from '../../shared/models.js';
+import { activityCategory, applyCategoryPolicy } from './category-policy.js';
+import type { CategoryConfiguration } from '../../shared/categories.js';
+import { categorySchema, financialKind, dateSchema, isAwaitingReview, kindSchema, type Account, type Classification, type DateRange, type LedgerRow, type RawRecord, type SourceTransaction, type Summary, type TransactionOverride } from '../../shared/models.js';
 
 export class AppError extends LocalizedError {
   constructor(message: string, public statusCode = 400) { super(message); }
@@ -93,7 +95,7 @@ export const inRanges = (date: string, ranges: DateRange[]) => ranges.some((rang
 
 export function createLedger(
   records: RawRecord[], accounts: Account[], overrides: Record<string, TransactionOverride>,
-  classifications: Record<string, Classification>, ranges: Record<string, DateRange[]>,
+  classifications: Record<string, Classification>, ranges: Record<string, DateRange[]>, settings?: CategoryConfiguration,
 ): LedgerRow[] {
   const all = records.map(normalize);
   const sources = new Map(all.map((tx) => [tx.id, tx]));
@@ -125,14 +127,11 @@ export function createLedger(
     const override = overrides[tx.id];
     const saved = classifications[tx.id];
     const classification = saved?.sourceHash === tx.sourceHash ? saved : undefined;
-    const category = override?.category ?? (tx.source === 'manual' && tx.category !== 'uncategorized' ? tx.category : classification?.category ?? tx.category);
-    const categoryConfirmed = Boolean(override?.category && override.category !== 'uncategorized' && override.kind !== 'review');
+    let category = override?.category ?? (tx.source === 'manual' && tx.category !== 'uncategorized' ? tx.category : classification?.category ?? tx.category);
     let kind = override?.kind ?? (tx.source === 'manual' ? tx.kind : classification?.kind ?? tx.kind);
-    if (categoryConfirmed && kind === 'review') kind = confirmedCategoryKind(tx.kind, category, tx.cashflowCents);
     if (!override?.kind && ownTransfers.has(tx.id)) kind = 'transfer';
     if (!override?.kind && reinvestmentDecision.has(tx.id)) kind = reinvestmentDecision.get(tx.id)!;
-    // Derive excluded activities without overwriting the original income/expense/refund direction.
-    if (kind !== 'excluded') kind = nonCashflowCategoryKind(category) ?? kind;
+    category = override?.category ?? activityCategory(kind, category);
     const signMismatch = (kind === 'income' && tx.cashflowCents < 0) || (kind === 'expense' && tx.cashflowCents > 0) || (kind === 'refund' && tx.cashflowCents < 0);
     const invalidSplits = Boolean(override?.splits?.length && override.splits.reduce((sum, split) => sum + split.cashflowCents, 0) !== tx.cashflowCents);
     const counterpart = override?.duplicateOf ? sources.get(override.duplicateOf) : undefined;
@@ -141,14 +140,14 @@ export function createLedger(
     const excluded = Boolean(override?.excluded || (override?.duplicateOf && !brokenMatch) || kind === 'excluded');
     const row: LedgerRow = {
       ...tx, raw: undefined,
-      kind: excluded ? 'excluded' : kind,
+      kind: financialKind(kind, tx.cashflowCents),
       category,
       country: override?.country ?? (tx.countrySource !== 'default' ? tx.country : classification?.country ?? tx.country),
       countrySource: override?.country ? 'manual' : tx.countrySource !== 'default' ? tx.countrySource : classification?.countrySource ?? 'default',
       accountName: account.name, accountMask: account.mask, institution: account.institution,
       version: `${tx.sourceHash}:${override?.revision || 0}`, parentId: tx.id,
       splitCount: override?.splits?.length || 0,
-      needsReview: kind === 'review' || (!nonCashflowCategoryKind(category) && !categoryConfirmed && override?.kind === undefined && !ownTransfers.has(tx.id) && Boolean(classification?.needsReview)),
+      needsReview: kind === 'review' || (override?.kind === undefined && !ownTransfers.has(tx.id) && Boolean(classification?.needsReview)),
       reason: brokenMatch ? t("The linked bank transaction was removed or changed. Review the manual entry.") : invalidSplits ? t("The source amount changed. Review the split amounts.") : reinvestmentDecision.get(tx.id) === 'review' ? t("This may be an automatic reinvestment. Confirm whether cash was actually received.") : classification?.reason || '',
       classificationSource: tx.source === 'manual' && tx.category !== 'uncategorized' || override && (override.kind || override.category || override.country) ? 'manual' : classification ? classification.provider ?? 'codex' : 'rules',
       notes: override?.notes ?? tx.notes, excluded, duplicateOf: override?.duplicateOf,
@@ -156,11 +155,11 @@ export function createLedger(
     } as LedgerRow;
     if (override?.splits?.length && !invalidSplits && !excluded && !brokenMatch && !signMismatch) {
       for (const split of override.splits) rows.push({ ...row, ...split, id: `${tx.id}:${split.id}`, parentId: tx.id, splitId: split.id,
-        description: split.description || row.description, kind: split.kind === 'excluded' ? 'excluded' : nonCashflowCategoryKind(split.category) ?? split.kind, countrySource: 'manual',
+        description: split.description || row.description, kind: split.kind, countrySource: 'manual',
         classificationSource: 'manual', excluded: split.kind === 'excluded', needsReview: false });
     } else rows.push(row);
   }
-  return rows.sort((a, b) => b.postedDate.localeCompare(a.postedDate) || a.id.localeCompare(b.id));
+  return rows.map(row => applyCategoryPolicy(row, settings)).sort((a, b) => b.postedDate.localeCompare(a.postedDate) || a.id.localeCompare(b.id));
 }
 
 export function summarize(rows: LedgerRow[]): Summary {
@@ -170,7 +169,7 @@ export function summarize(rows: LedgerRow[]): Summary {
       result.reviewCount++;
       if (row.currency === 'USD') result.reviewCents += Math.abs(row.cashflowCents);
     }
-    if (row.excluded || row.currency !== 'USD' || row.kind === 'review' || row.needsReview) continue;
+    if (row.excluded || row.categoryExcluded || row.currency !== 'USD' || row.kind === 'review' || row.needsReview) continue;
     if (row.kind === 'income') result.incomeCents += row.cashflowCents;
     else if (row.kind === 'expense' || row.kind === 'refund') result.expenseCents -= row.cashflowCents;
   }

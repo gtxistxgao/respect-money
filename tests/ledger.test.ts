@@ -21,13 +21,14 @@ describe('ledger invariants', () => {
       expect(summarize([{ ...rows[0], kind }])).toMatchObject({ expenseCents: 0, reviewCount: 0 });
     }
   });
-  it('resolves manual categories without discarding explicit review or structural problems', () => {
+  it('keeps category and type independent without discarding review or structural problems', () => {
     const record = raw({ name: 'Zelle purchase' });
     const tx = normalize(record);
     const review: Classification = { sourceHash: tx.sourceHash, kind: 'review', category: 'dining', country: 'US', countrySource: 'default', reason: 'Uncertain transaction.', needsReview: true, classifiedAt: '2026-08-15', classifierVersion: 'test' };
     const evaluate = (changes: Partial<TransactionOverride>, classification = review) => createLedger([record], [account], { [tx.id]: { revision: 1, updatedAt: '2026-08-15', ...changes } }, { [tx.id]: classification }, ranges)[0];
-    expect(evaluate({ category: 'childcare' })).toMatchObject({ kind: 'expense', needsReview: false, category: 'childcare', classificationSource: 'manual' });
-    expect(evaluate({ category: 'childcare' }, { ...review, kind: 'expense' })).toMatchObject({ kind: 'expense', needsReview: false });
+    expect(evaluate({ category: 'childcare' })).toMatchObject({ kind: 'review', needsReview: true, category: 'childcare', classificationSource: 'manual' });
+    expect(evaluate({ category: 'childcare' }, { ...review, kind: 'expense' })).toMatchObject({ kind: 'expense', needsReview: true });
+    expect(evaluate({ category: 'childcare', kind: 'expense' })).toMatchObject({ kind: 'expense', needsReview: false });
     expect(evaluate({ country: 'CN' })).toMatchObject({ kind: 'review', needsReview: true });
     expect(evaluate({ category: 'uncategorized' })).toMatchObject({ kind: 'review', needsReview: true });
     expect(evaluate({ category: 'childcare', kind: 'review' })).toMatchObject({ kind: 'review', needsReview: true });
@@ -36,10 +37,10 @@ describe('ledger invariants', () => {
     expect(evaluate({ category: 'childcare', splits: [{ id: 'part', description: '', cashflowCents: -1, kind: 'expense', category: 'childcare', country: 'US' }] })).toMatchObject({ kind: 'review', needsReview: true });
   });
   it('distinguishes incoming income, purchase refunds and card repayments after manual categorization', () => {
-    for (const [name, category, expected] of [['Zelle received', 'salary', 'income'], ['Transfer received', 'investments', 'income'], ['Zelle reimbursement', 'dining', 'refund'], ['Payment thank you', 'dining', 'payment']] as const) {
+    for (const [name, category, expected] of [['Zelle received', 'salary', 'income'], ['Transfer received', 'investments', 'income'], ['Zelle reimbursement', 'dining', 'refund'], ['Payment thank you', 'credit_card_payment', 'income']] as const) {
       const record = raw({ name, amount: -100 });
       const tx = normalize(record);
-      const rows = createLedger([record], [account], { [tx.id]: { revision: 1, updatedAt: '2026-08-15', category } }, {}, ranges);
+      const rows = createLedger([record], [account], { [tx.id]: { revision: 1, updatedAt: '2026-08-15', category, kind: expected } }, {}, ranges);
       expect(rows[0]).toMatchObject({ kind: expected, cashflowCents: 10000, needsReview: false });
     }
   });
@@ -57,7 +58,7 @@ describe('ledger invariants', () => {
   it.each(['AUTOMATIC PAYMENT - THANK', 'AUTOMATIC PAYMENT - THANK YOU', 'automatic payment-thank', 'Automatic  Payment —  Thank', 'PAYMENT THANK YOU'])('excludes both cashflow directions of the repayment description %s', (name) => {
     for (const amount of [100, -100]) {
       const rows = ledger([raw({ name, amount })]);
-      expect(rows[0]).toMatchObject({ kind: 'payment', needsReview: false });
+      expect(rows[0]).toMatchObject({ kind: amount < 0 ? 'income' : 'expense', category: 'credit_card_payment', categoryExcluded: true, needsReview: false });
       expect(summarize(rows)).toMatchObject({ incomeCents: 0, expenseCents: 0, netCents: 0, reviewCount: 0 });
     }
   });
@@ -83,7 +84,7 @@ describe('ledger invariants', () => {
     const out = raw({ transaction_id: 'out', personal_finance_category: { primary: 'TRANSFER_OUT', detailed: 'TRANSFER_OUT_ACCOUNT_TRANSFER' } });
     const incoming = { ...raw({ transaction_id: 'in', amount: -100, personal_finance_category: { primary: 'TRANSFER_IN', detailed: 'TRANSFER_IN_ACCOUNT_TRANSFER' } }), accountId: second.id };
     const rows = createLedger([out, incoming, raw({ transaction_id: 'friend', amount: -25, name: 'Zelle from friend' })], [account, second], {}, {}, { ...ranges, second: ranges.fictional });
-    expect(rows.filter((r) => r.kind === 'transfer')).toHaveLength(2);
+    expect(rows.filter((r) => r.category === 'internal_transfer' && r.categoryExcluded)).toHaveLength(2);
     expect(summarize(rows)).toMatchObject({ incomeCents: 0, expenseCents: 0, reviewCount: 1 });
   });
   it('counts investment cash income and separate fees while excluding trades and reinvestments', () => {
@@ -94,8 +95,8 @@ describe('ledger invariants', () => {
       investment('reinvest', 20, 'buy', 'dividend reinvestment', 'fund'), investment('auto-dividend', -20, 'cash', 'dividend', 'fund'),
     ]);
     expect(summarize(rows)).toMatchObject({ incomeCents: 6000, expenseCents: 500 });
-    expect(rows.find((row) => row.sourceId === 'auto-dividend')?.kind).toBe('reinvestment');
-    expect(rows.find((row) => row.sourceId === 'buy')).toMatchObject({ kind: 'investment', category: 'investment_transaction', needsReview: false });
+    expect(rows.find((row) => row.sourceId === 'auto-dividend')).toMatchObject({ kind: 'income', category: 'investment_transaction', categoryExcluded: true });
+    expect(rows.find((row) => row.sourceId === 'buy')).toMatchObject({ kind: 'expense', categoryExcluded: true, category: 'investment_transaction', needsReview: false });
   });
   it('does not guess a reinvestment match when security identity is missing', () => {
     const investment = (id: string, amount: number, subtype: string): RawRecord => ({ accountId: account.id, source: 'plaid_investments', payload: { investment_transaction_id: id, date: '2026-08-15', amount, type: subtype === 'dividend' ? 'cash' : 'buy', subtype, security_id: null, name: 'Test activity', iso_currency_code: 'USD' } });

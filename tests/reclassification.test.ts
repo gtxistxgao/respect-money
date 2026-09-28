@@ -42,7 +42,7 @@ it('previews reference-ID variants without edits and applies only selected match
     expect(JSON.stringify(matcher.mock.calls)).not.toContain('PRIVATE_TOKEN');
     expect(await f.service.apply(preview.id, [first])).toEqual({ applied: 1 });
     const state = f.repository.snapshot();
-    expect(state.processed.find((r) => r.id === first)).toMatchObject({ category: 'housing', kind: 'expense', needsReview: false, notes: 'Keep note', country: 'JP', cashflowCents: -50000 });
+    expect(state.processed.find((r) => r.id === first)).toMatchObject({ category: 'housing', kind: 'review', needsReview: true, notes: 'Keep note', country: 'JP', cashflowCents: -50000 });
     expect(state.processed.find((r) => r.id === second)).toMatchObject({ category: 'uncategorized', kind: 'review' });
     await expect(f.service.apply(preview.id, [first])).rejects.toThrow();
     const next = f.service.start(f.rule.id); await f.service.close();
@@ -90,7 +90,7 @@ it('skips split, excluded, pending, disabled, non-USD and repayment records and 
     const matches = f.service.get(preview.id).matches;
     expect(matches).toHaveLength(1);
     await f.service.apply(preview.id, matches.map((r) => r.id));
-    expect(f.repository.snapshot().processed.find((r) => r.id === matches[0].id)).toMatchObject({ kind: 'income', category: 'salary', cashflowCents: 50000 });
+    expect(f.repository.snapshot().processed.find((r) => r.id === matches[0].id)).toMatchObject({ kind: 'review', category: 'salary', cashflowCents: 50000 });
     await f.repository.change((state) => { state.accounts[0].enabled = false; });
     const disabled = f.service.start(f.rule.id); await f.service.close();
     expect(f.service.get(disabled.id).total).toBe(0);

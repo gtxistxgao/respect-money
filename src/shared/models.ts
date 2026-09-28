@@ -1,31 +1,17 @@
 import { message as t, translate, getLocale } from "../i18n/index.js";
 import { z } from 'zod';
 
-export const categoryOptions = [
-  ['dining', "Dining"], ['groceries', "Groceries"], ['housing', "Housing"], ['transport', "Transport"],
-  ['shopping', "Shopping"], ['health', "Health"], ['childcare', "Childcare"], ['entertainment', "Entertainment"], ['travel', "Travel"],
-  ['side_business_expenses', "Side business expenses"],
-  ['salary', "Salary"], ['investments', "Investments"], ['interest', "Interest"], ['dividends', "Dividends"],
-  ['investment_transaction', "Investment transaction"], ['internal_transfer', "Internal transfer"], ['uncategorized', "Uncategorized"],
-] as const;
+import { categoryOptions, canonicalCategory, categoryIdSchema } from './categories.js';
+export { categoryOptions, canonicalCategory } from './categories.js';
 export const categories = categoryOptions.map(([id]) => id);
-// Accept historical IDs at input boundaries; expose only the merged category.
-export const canonicalCategory = (value: unknown) => value === 'investment_income' || value === 'investment_fees' ? 'investments' : value;
-export const categorySchema = z.preprocess(canonicalCategory, z.enum(categories));
+export const categorySchema = z.preprocess(canonicalCategory, categoryIdSchema);
 export type Category = z.infer<typeof categorySchema>;
 export const countryOptions = [['US', "United States"], ['CN', "China"], ['JP', "Japan"], ['CA', "Canada"], ['GB', "United Kingdom"], ['KR', "South Korea"], ['FR', "France"], ['DE', "Germany"], ['SG', "Singapore"], ['AU', "Australia"]] as const;
 export const countrySchema = z.string().regex(/^[A-Z]{2}$/);
 export const kindSchema = z.enum(['income', 'expense', 'refund', 'transfer', 'payment', 'investment', 'reinvestment', 'excluded', 'review']);
 export type TransactionKind = z.infer<typeof kindSchema>;
-export function nonCashflowCategoryKind(category: Category): 'transfer' | 'investment' | undefined {
-  if (category === 'internal_transfer') return 'transfer';
-  if (category === 'investment_transaction') return 'investment';
-}
-export function confirmedCategoryKind(kind: TransactionKind, category: Category, cashflowCents: number): TransactionKind {
-  if (kind !== 'review' || category === 'uncategorized' || !cashflowCents) return kind;
-  if (nonCashflowCategoryKind(category)) return cashflowCents < 0 ? 'expense' : 'income';
-  if (cashflowCents < 0) return 'expense';
-  return ['salary', 'investments', 'interest', 'dividends'].includes(category) ? 'income' : 'refund';
+export function financialKind(kind: TransactionKind, cashflowCents: number): 'income' | 'expense' | 'refund' | 'review' {
+  return ['income', 'expense', 'refund', 'review'].includes(kind) ? kind as 'income' | 'expense' | 'refund' | 'review' : cashflowCents > 0 ? 'income' : 'expense';
 }
 export const kindLabels: Record<TransactionKind, string> = {
   income: "Income", expense: "Spending", refund: "Refund", transfer: "Internal transfer", payment: "Credit card payment",
@@ -84,13 +70,14 @@ export type LedgerRow = Omit<SourceTransaction, 'raw' | 'countrySource'> & {
   countrySource: 'bank' | 'default' | 'manual' | 'ai';
   accountName: string; accountMask: string; institution: string; version: string;
   parentId: string; splitId?: string; splitCount: number; needsReview: boolean;
+  categoryExcluded?: boolean;
   reason: string; classificationSource: 'rules' | 'manual' | 'codex' | 'claude';
   excluded: boolean; duplicateOf?: string | null;
   classifiedAt?: string; classifierVersion?: string;
 };
 // Missing spending/income categories need attention without making the cashflow uncertain.
-export function isAwaitingReview(row: Pick<LedgerRow, 'kind' | 'category' | 'needsReview' | 'excluded'>): boolean {
-  return !row.excluded && row.kind !== 'excluded' && (row.kind === 'review' || row.needsReview
+export function isAwaitingReview(row: Pick<LedgerRow, 'kind' | 'category' | 'needsReview' | 'excluded' | 'categoryExcluded'>): boolean {
+  return !row.excluded && !row.categoryExcluded && row.kind !== 'excluded' && (row.kind === 'review' || row.needsReview
     || (row.category === 'uncategorized' && ['expense', 'income', 'refund'].includes(row.kind)));
 }
 export const ledgerRowSchema = z.object({
@@ -99,6 +86,7 @@ export const ledgerRowSchema = z.object({
   pending: z.boolean(), removed: z.boolean(), sourceHash: z.string(), kind: kindSchema, category: categorySchema, country: countrySchema,
   countrySource: z.enum(['bank', 'default', 'manual', 'ai']), notes: z.string(), accountName: z.string(), accountMask: z.string(), institution: z.string(),
   version: z.string(), parentId: z.string(), splitId: z.string().optional(), splitCount: z.number().int().nonnegative(), needsReview: z.boolean(), reason: z.string(),
+  categoryExcluded: z.boolean().optional(),
   classificationSource: z.enum(['rules', 'manual', 'codex', 'claude']), excluded: z.boolean(), duplicateOf: z.string().nullable().optional(),
   classifiedAt: z.string().optional(), classifierVersion: z.string().optional(),
 });

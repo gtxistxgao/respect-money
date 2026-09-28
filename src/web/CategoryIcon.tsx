@@ -4,11 +4,11 @@ import type { Category } from '../shared/models.js';
 const icons: Record<Category, LucideIcon> = {
   dining: Utensils, groceries: ShoppingBasket, housing: House, transport: Car,
   shopping: ShoppingBag, health: HeartPulse, childcare: Baby, entertainment: Clapperboard, travel: Plane,
-  side_business_expenses: BriefcaseBusiness, salary: Banknote, investments: TrendingUp, interest: Landmark, dividends: ChartNoAxesCombined,
+  side_business: BriefcaseBusiness, salary: Banknote, investments: TrendingUp, interest: Landmark, dividends: ChartNoAxesCombined,
   investment_transaction: ChartNoAxesCombined, internal_transfer: ArrowLeftRight, uncategorized: Shapes,
 };
 
 export function CategoryIcon({ category, size = 16, className }: { category: Category; size?: number; className?: string }) {
-  const Icon = icons[category];
+  const Icon = icons[category] ?? Shapes;
   return <Icon className={className} size={size} strokeWidth={1.75} aria-hidden="true" />;
 }

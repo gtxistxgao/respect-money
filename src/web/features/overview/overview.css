@@ -68,8 +68,6 @@
 .category-share-track > span { display: block; height: 100%; border-radius: inherit; background: var(--category-color); }
 @container (min-width: 600px) { .category-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @container (max-width: 399px) { .category-grid { grid-template-columns: 1fr; } }
-.category-footnote { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-top: 16px; margin-top: 16px; border-top: 1px solid var(--line); font-size: 11px; color: var(--muted); }
-.category-footnote strong { color: var(--text); margin-left: 6px; font-weight: 500; }
 .category-panel .chart-note { font-size: 10px; margin-top: 10px; }
 .chart-empty { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; min-height: 96px; }
 .chart-empty p { font-size: 12px; text-align: center; }
@@ -131,14 +129,13 @@
 .monthly-summary-row .chart-heading { margin-bottom: 10px; gap: 8px; }
 .monthly-summary-row .chart-heading h2 { font-size: 14px; }
 .monthly-summary-row .chart-heading p { margin-top: 3px; }
-.monthly-summary-row .category-footnote { padding-top: 10px; margin-top: 10px; gap: 6px; }
 .monthly-summary-row .chart-empty { min-height: 96px; gap: 10px; }
 @media (max-width: 1100px) {
   .monthly-summary-row.with-categories { grid-template-columns: 1fr; }
-  .monthly-summary-row.with-categories .summary-grid { grid-template-columns: 1fr 1fr; }
+  .monthly-summary-row.with-categories .summary-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 600px) {
-  .monthly-summary-row .summary-grid, .monthly-summary-row.with-categories .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .monthly-summary-row .summary-grid, .monthly-summary-row.with-categories .summary-grid { grid-template-columns: minmax(0, 1fr); }
   .monthly-summary-row .summary-panel { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; padding: 8px; }
   .monthly-summary-row .summary-label { font-size: 11px; }
   .monthly-summary-row .summary-symbol { display: none; }
@@ -146,6 +143,5 @@
   .monthly-summary-row .summary-panel > strong { font-size: clamp(14px, 4.2vw, 18px); letter-spacing: -.5px; }
   .category-item-heading, .category-item-values { font-size: 11px; }
   .category-item-heading { gap: 4px; }
-  .category-footnote { font-size: 10px; }
   .chart-note { line-height: 1.6; }
 }

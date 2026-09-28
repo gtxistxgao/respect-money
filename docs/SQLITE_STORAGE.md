@@ -102,3 +102,5 @@ Startup normalizes the former `investment_income` and `investment_fees` categori
 ## Verification
 
 Temporary-directory tests cover full-state migration fidelity, source hashes, splits, cross-month records, orphan overrides, stale published snapshots, repeated migration, staging recovery, rejected malformed inputs, transaction rollback, process death during writes, writer locks, revisions, checksummed backups, and both restore formats. API and browser tests cover the associated user workflows. See [Implementation status](IMPLEMENTATION_STATUS.md).
+
+Category definitions and deletion redirects are stored in application settings and included in backups. Dedicated category endpoints use the settings revision for concurrency control. Deletion updates overrides, splits, caches, rules and published rows atomically while preserving raw payloads. Published legacy activity kinds are projected into a neutral category and a separate cashflow type; category inclusion is stored separately from explicit transaction exclusions. Legacy manually confirmed cashflow types are retained when upgrading.

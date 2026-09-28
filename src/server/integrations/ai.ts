@@ -1,3 +1,4 @@
+import { resolveCategories } from '../../shared/categories.js';
 import type { ApplicationSettings, ModelOption } from '../../shared/settings.js';
 import { createClassifier } from './codex/classifier.js';
 import { createPatternMatcher } from './codex/pattern-matcher.js';
@@ -12,7 +13,7 @@ export function classificationBackend(settings: ApplicationSettings) {
   const run = provider === 'claude' ? runClaude : runCodex;
   return {
     provider, ...options, environment: provider === 'claude' ? claudeEnvironment : codexEnvironment,
-    classify: createClassifier(options, settings.classificationPrompt, run),
+    classify: createClassifier(options, settings.classificationPrompt, run, resolveCategories(settings)),
     matchPatterns: createPatternMatcher(options, run),
   };
 }

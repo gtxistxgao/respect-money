@@ -4,13 +4,15 @@ import { chmod } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { confirmedCategoryKind, manualAccountInput, manualTransactionInput, overrideSchema, type Account, type DateRange, type RawRecord, type TransactionOverride } from '../../shared/models.js';
+import { manualAccountInput, manualTransactionInput, overrideSchema, type Account, type DateRange, type RawRecord, type TransactionOverride } from '../../shared/models.js';
 import { AppError, cents, createLedger, mergeRanges, normalize, transactionId } from '../domain/ledger.js';
 import { emptyState, type RepositoryState } from './state.js';
 import { DATABASE_NAME, SqliteStore } from './sqlite-store.js';
 import { WriterLock } from './writer-lock.js';
 import { hasLegacyData } from './legacy-json.js';
 import { mergeInvestmentCategories } from './category-migration.js';
+import { applyCategoryPolicy } from '../domain/category-policy.js';
+import { resolveCategories } from '../../shared/categories.js';
 import { removeAccounts } from './account-removal.js';
 
 export { connectionSchema, jobSchema } from './state.js';
@@ -47,7 +49,7 @@ export class Repository {
     } catch (error) { this.store?.close(); this.store = undefined; await this.lock.release(); throw error; }
     return this;
   }
-  snapshot() { return structuredClone(this.state); }
+  snapshot() { const state = structuredClone(this.state); state.processed = state.processed.map(row => applyCategoryPolicy(row, state.settings)); return state; }
   async change<T>(action: (state: RepositoryState) => T | Promise<T>, publish = true): Promise<T> {
     const operation = this.queue.then(async () => {
       if (!this.store) throw new AppError(t("The database has not been initialized."), 503);
@@ -55,7 +57,7 @@ export class Repository {
       const result = await action(state);
       state.revision++;
       if (publish) {
-        const fresh = createLedger(Object.values(state.records), state.accounts, state.overrides, state.classifications, state.ranges);
+        const fresh = createLedger(Object.values(state.records), state.accounts, state.overrides, state.classifications, state.ranges, state.settings);
         const stale = new Set(state.staleAccountIds);
         state.processed = [...fresh.filter((row) => !stale.has(row.accountId)), ...this.state.processed.filter((row) => stale.has(row.accountId))];
       }
@@ -78,6 +80,7 @@ export class Repository {
     if (amountCents <= 0) throw new AppError(t("The amount must be greater than zero."));
     const id = `manual_${randomUUID()}`;
     await this.change((state) => {
+      if (!resolveCategories(state.settings).some(item => item.id === value.category)) throw new AppError(t('Category not found. Refresh categories and retry.'), 400);
       const account = state.accounts.find((a) => a.id === value.accountId);
       if (!account) throw new AppError(t("Select an existing account."));
       if (account.source !== 'manual') throw new AppError(t("Add manual transactions to a manual account to avoid duplicating bank records."));
@@ -98,10 +101,8 @@ export class Repository {
     await this.change((state) => {
       this.assertVersion(state, id, version);
       const tx = normalize(state.records[id]);
-      // Choosing a category also resolves a previous explicit review selection.
-      // A review kind supplied in this request remains an intentional override.
-      if (changes.category && changes.category !== 'uncategorized' && changes.kind === undefined && state.overrides[id]?.kind === 'review') {
-        changes = { ...changes, kind: confirmedCategoryKind(tx.kind, changes.category, tx.cashflowCents) };
+      for (const category of [changes.category, ...(changes.splits?.map(split => split.category) ?? [])]) {
+        if (category && !resolveCategories(state.settings).some(item => item.id === category)) throw new AppError(t('Category not found. Refresh categories and retry.'), 400);
       }
       if (changes.kind && ((changes.kind === 'income' && tx.cashflowCents < 0) || (changes.kind === 'expense' && tx.cashflowCents > 0) || (changes.kind === 'refund' && tx.cashflowCents < 0))) throw new AppError(t("The selected transaction type conflicts with the cash flow direction."));
       if (changes.splits?.length) {

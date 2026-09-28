@@ -91,7 +91,7 @@ it.each(['salary', 'investments'])('serves durable manual accounting, filters, s
   } finally { await app.close(); await rm(directory, { recursive: true, force: true }); }
 });
 
-it.each([['internal_transfer', 'transfer'], ['investment_transaction', 'investment']] as const)('excludes the %s category and split portions, persists them, and restores income when recategorized', async (category, activityKind) => {
+it.each(['internal_transfer', 'investment_transaction'] as const)('excludes the %s category and split portions, persists them, and restores income when recategorized', async (category) => {
   const directory = await mkdtemp(join(tmpdir(), 'respect-money-transfer-'));
   let app = await buildApp({ ...readConfig(), dataDir: directory });
   try {
@@ -101,8 +101,8 @@ it.each([['internal_transfer', 'transfer'], ['investment_transaction', 'investme
     expect(incoming.statusCode).toBe(201);
     const incomingId = incoming.json().id;
     const detail = (await app.inject(`/api/transactions/${incomingId}`)).json();
-    expect(detail).toMatchObject({ editableKind: 'income', transaction: { kind: activityKind, cashflowCents: 7500, category } });
-    expect((await app.inject({ method: 'PATCH', url: `/api/transactions/manual/${incomingId}`, payload: { ...base, description: 'Own account credit', amount: '75.00', kind: detail.editableKind, category, version: detail.version } })).statusCode).toBe(200);
+    expect(detail).toMatchObject({ transaction: { kind: 'income', cashflowCents: 7500, category } });
+    expect((await app.inject({ method: 'PATCH', url: `/api/transactions/manual/${incomingId}`, payload: { ...base, description: 'Own account credit', amount: '75.00', kind: detail.transaction.kind, category, version: detail.version } })).statusCode).toBe(200);
 
     const outgoing = await app.inject({ method: 'POST', url: '/api/transactions/manual', payload: { ...base, description: 'Mixed debit', amount: '100.00', kind: 'expense', category: 'shopping' } });
     const outgoingId = outgoing.json().id;
@@ -119,7 +119,7 @@ it.each([['internal_transfer', 'transfer'], ['investment_transaction', 'investme
     expect((await app.inject('/api/accounting/transactions?month=2026-06&mode=expense')).json().total).toBe(1);
     const transfers = (await app.inject(`/api/accounting/transactions?month=2026-06&mode=all&categories=${category}`)).json().rows;
     expect(transfers).toHaveLength(2);
-    expect(transfers.every((row: { kind: string; needsReview: boolean }) => row.kind === activityKind && !row.needsReview)).toBe(true);
+    expect(transfers.every((row: { categoryExcluded: boolean; needsReview: boolean }) => row.categoryExcluded && !row.needsReview)).toBe(true);
     expect(transfers.map((row: { cashflowCents: number }) => row.cashflowCents).sort((a: number, b: number) => a - b)).toEqual([-7000, 7500]);
     const latest = (await app.inject(`/api/transactions/${incomingId}`)).json();
     expect((await app.inject({ method: 'PUT', url: `/api/transactions/${incomingId}/overrides`, payload: { version: latest.version, category: 'salary' } })).statusCode).toBe(200);

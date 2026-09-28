@@ -1,6 +1,7 @@
 import { WealthService } from './services/wealth.js';
 import { wealthRoutes } from './routes/wealth.js';
 import { classificationBackend } from './integrations/ai.js';
+import { categoryRoutes } from './routes/categories.js';
 import { settingsRoutes } from './routes/settings.js';
 import { applicationSettingsSchema, type ModelOption } from '../shared/settings.js';
 import { localizeResponse, validationMessage, validationPath } from './localization.js';
@@ -93,6 +94,7 @@ export async function buildApp(config: AppConfig = readConfig(), dependencies: {
   });
   await settingsRoutes(app, repository, config, dependencies.models);
   await accountingRoutes(app, repository);
+  await categoryRoutes(app, repository, config);
   await wealthRoutes(app, repository, wealth);
   await reclassificationRoutes(app, repository, reclassification);
   await bankingRoutes(app, connections, jobs, repository);

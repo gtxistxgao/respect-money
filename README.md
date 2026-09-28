@@ -106,6 +106,8 @@ The backend fetches the available bank and investment transactions from Plaid, t
 
 Sync is initiated by you; this is not an always-on scheduled bank poller. Normal sync reads what Plaid currently has. The optional bank-refresh setting requests a newer upstream update where supported. Available history and freshness depend on the provider.
 
+**Configure your categories.** In **Settings → Categories**, add or rename neutral categories such as Housing, Travel or Side business, give each one an AI prompt, and choose whether it counts toward income and spending. Income, expense and refund are independent transaction types; changing a category does not change the type. Deleting a category moves its transactions and saved rules to a replacement you choose. Uncategorized remains as the fallback.
+
 **Correct recurring mistakes in one batch.** Open **Settings → Reclassify**, enter an example or pattern, choose the correct category and cash flow direction, and scan. Review the matches, deselect anything that does not belong, and apply your correction to the selected transactions. For example, teach the app that a recurring rent payment belongs in Housing, then fix its matches together. You can also explicitly rerun classification over a date range. Your manual decisions remain protected during ordinary synchronization and automatic classification.
 
 ### 6. Explore your ledger and wealth
@@ -131,13 +133,13 @@ Totals include posted USD transactions from enabled accounts. Pending, non-USD, 
 | --- | --- |
 | Purchase | Spending in its posting month |
 | Refund | Reduces spending in the refund's posting month; net spending may be negative |
-| Transfer between your accounts or credit card repayment | Excluded from income and spending |
+| Transfer between your accounts or credit card repayment | Excluded by default; configurable per category |
 | Cash dividends and interest | Income |
 | Standalone investment fee | Spending |
-| Securities trade or automatic reinvestment | Excluded from income and spending |
+| Securities trade or automatic reinvestment | Excluded by default; configurable per category |
 | Split purchase | Count the split rows once; their sum must equal the original amount |
 
-Monthly totals depend on the selected month and accounts. Column filters have a separate subtotal. Category shares use spending before refunds; refunds and net spending are shown separately. The All transactions view also includes excluded activity, so its net cash flow is not the same as income minus spending.
+Monthly totals depend on the selected month and accounts. Column filters have a separate subtotal. Category shares use spending after refunds. The monthly cards stack total spending, total income and total refunds; refunds still offset spending and are never added to income. The All transactions view also includes excluded activity, so its net cash flow is not the same as income minus spending.
 
 Bank facts are preserved. Manual categories, countries, notes, exclusions, and splits survive synchronization and automatic classification. If a bank changes an amount that no longer matches a split, the transaction requires review. Possible duplicates between manual and imported records require explicit confirmation; the manual original is retained.
 
@@ -177,7 +179,7 @@ Classification sends selected descriptions, dates, amounts, and location/categor
 
 Synchronization preserves saved classifications and manual edits. Changing the model, prompt, or bank record does not automatically rerun an existing classification; explicitly reclassify with reanalysis enabled. Classification failure keeps the last successful ledger and marks it stale. Retry classification, or publish using bank rules and review the results manually. Unknown countries default to US with their source marked as a default. The default prompt requests Chinese explanations; edit it to request English. Generated explanations are not automatically translated by the UI.
 
-**Settings → Reclassify** supports locally saved example-based rules. Enter examples or a recipient/text/amount pattern, select a category and cash flow direction, then scan existing transactions. Review and select matches before applying. Scans cover enabled accounts across months and exclude pending, split, excluded, non-USD, repayment, and investment activity. Each model batch reviews at most 1,000 transactions. Invalid output receives one retry. Applying selected matches can replace an earlier manual category and preserves notes and countries. Changed rules or records require a new preview. Previews expire after one hour and are lost on restart; rules persist in backups. Rules run only when explicitly scanned.
+**Settings → Reclassify** supports locally saved example-based rules. Enter examples or a recipient/text/amount pattern, select a category and cash flow direction, then scan existing transactions. Review and select matches before applying. Scans cover enabled accounts across months and exclude pending, split, excluded and non-USD records, including categories configured to stay out of cash flow. Each model batch reviews at most 1,000 transactions. Invalid output receives one retry. Applying selected matches can replace an earlier manual category and preserves transaction types, notes and countries. Changed rules or records require a new preview. Previews expire after one hour and are lost on restart; rules persist in backups. Rules run only when explicitly scanned.
 
 ## Wealth and balance history
 

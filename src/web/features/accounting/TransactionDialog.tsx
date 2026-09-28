@@ -1,20 +1,22 @@
+import { useCategories } from '../../categories.js';
 import { Select } from '../../Select.js';
 import { t } from "../../../i18n/index.js";
 import { useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
-import { categoryOptions, confirmedCategoryKind, countryOptions, kindLabels, today, type Account, type Category, type SourceTransaction, type TransactionKind, type TransactionOverride, type Split } from '../../../shared/models.js';
+import { financialKind, countryOptions, kindLabels, today, type Account, type SourceTransaction, type TransactionOverride, type Split } from '../../../shared/models.js';
 import { api, money, refreshData } from '../../api.js';
 import { ErrorNotice, Field, Loading, Modal } from '../../components.js';
 
 type Detail = { transaction: Omit<SourceTransaction, 'raw'>; editableKind?: SourceTransaction['kind']; override?: TransactionOverride; version: string; reason?: string; classificationSource?: string };
 export function CategorySelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  return <Select aria-label={t("Categories")} value={value} onValueChange={(nextValue) => onChange(nextValue)}>{categoryOptions.map(([id, label]) => <option key={id} value={id}>{t(label)}</option>)}</Select>;
+  const { options: categoryOptions } = useCategories();
+  return <Select aria-label={t("Categories")} value={value} onValueChange={(nextValue) => onChange(nextValue)}>{categoryOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</Select>;
 }
 export function CountrySelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const [custom, setCustom] = useState(!countryOptions.some(([code]) => code === value));
   return <><Select aria-label={t("Country")} value={custom ? '__custom' : value} onValueChange={(nextValue) => { const custom = nextValue === '__custom'; setCustom(custom); onChange(custom ? '' : nextValue); }}>
-    {countryOptions.map(([id, label]) => <option key={id} value={id}>{t(label)}</option>)}
+    {countryOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
     <option value="__custom">{t("Other country (enter code)")}</option>
   </Select>{custom && <input aria-label={t("Country code")} value={value} onChange={(e) => onChange(e.target.value.toUpperCase())} maxLength={2} pattern="[A-Z]{2}" required placeholder={t("e.g. NZ")} />}</>;
 }
@@ -47,9 +49,10 @@ function TransactionForm({ detail, accounts, month, onClose }: { detail?: Detail
   const manualAccounts = accounts.filter((a) => a.source === 'manual');
   const bank = Boolean(detail && detail.transaction.source !== 'manual');
   const tx = detail?.transaction; const override = detail?.override;
-  const [category, setCategory] = useState<string>(override?.category || tx?.category || 'uncategorized');
+  const [category, setCategory] = useState<string>(tx?.category || override?.category || 'uncategorized');
   const [country, setCountry] = useState(override?.country || tx?.country || 'US');
-  const [kind, setKind] = useState<string>(detail?.editableKind || override?.kind || tx?.kind || 'expense');
+  const [kind, setKind] = useState<string>(financialKind(override?.kind || tx?.kind || 'expense', tx?.cashflowCents ?? -1));
+  const { definitions } = useCategories();
   const [excluded, setExcluded] = useState(Boolean(override?.excluded));
   const [error, setError] = useState<unknown>(); const [saving, setSaving] = useState(false);
   const date = tx?.postedDate || (today().startsWith(month) ? today() : `${month}-01`);
@@ -81,9 +84,9 @@ function TransactionForm({ detail, accounts, month, onClose }: { detail?: Detail
       <Field label={t("Description")}><input name="description" defaultValue={tx?.description} placeholder={t("e.g. Groceries, salary payment")} required maxLength={500} autoFocus /></Field>
       <div className="form-grid"><Field label={t("Posting date")}><input type="date" name="postedDate" required defaultValue={date} /></Field><Field label={t("Amount (USD)")}><input name="amount" required inputMode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?" defaultValue={tx ? (Math.abs(tx.cashflowCents) / 100).toFixed(2) : ''} placeholder="0.00" /></Field></div>
     </>}
-    <Field label={t("Transaction type")}><Select value={kind} onValueChange={(nextValue) => setKind(nextValue)}>{Object.entries(kindLabels).filter(([value]) => value !== 'excluded').map(([value, label]) => <option value={value} key={value}>{t(label)}</option>)}</Select></Field>
-    <div className="form-grid"><Field label={t("Categories")}><CategorySelect value={category} onChange={(value) => { setCategory(value); if (tx) setKind(confirmedCategoryKind(kind as TransactionKind, value as Category, tx.cashflowCents)); }} /></Field><Field label={t("Country of transaction")}><CountrySelect value={country} onChange={setCountry} /></Field></div>
-    {category === 'internal_transfer' && <p className="muted">{t("Internal transfers are excluded from income and spending.")}</p>}
+    <Field label={t("Transaction type")}><Select value={kind} onValueChange={(nextValue) => setKind(nextValue)}>{Object.entries(kindLabels).filter(([value]) => ['income', 'expense', 'refund', 'review'].includes(value)).map(([value, label]) => <option value={value} key={value}>{t(label)}</option>)}</Select></Field>
+    <div className="form-grid"><Field label={t("Categories")}><CategorySelect value={category} onChange={setCategory} /></Field><Field label={t("Country of transaction")}><CountrySelect value={country} onChange={setCountry} /></Field></div>
+    {definitions.find(row => row.id === category)?.includeInCashflow === false && <p className="muted">{t('Excluded from income and spending')}</p>}
     <Field label={t("Notes (optional)")}><textarea name="notes" rows={2} defaultValue={override?.notes ?? tx?.notes} maxLength={2000} placeholder={t("Add information about this transaction")} /></Field>
     {detail && <label className="check-row"><input type="checkbox" checked={excluded} onChange={(e) => setExcluded(e.target.checked)} />{t("Exclude from income and spending")}</label>}
     <div className="form-actions"><button type="button" className="button secondary" onClick={onClose}>{t("Cancel")}</button><button className="button primary" disabled={saving}>{saving ? t("Saving…") : t("Save transaction")}</button></div>

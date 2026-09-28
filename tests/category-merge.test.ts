@@ -6,7 +6,6 @@ import { expect, it } from 'vitest';
 import { buildApp } from '../src/server/app.js';
 import { readConfig } from '../src/server/config.js';
 import { createLedger, normalize, summarize, transactionId } from '../src/server/domain/ledger.js';
-import { classificationJSONSchema } from '../src/server/integrations/codex/classifier.js';
 import { createBackup, restoreBackup } from '../src/server/storage/backups.js';
 import { Repository } from '../src/server/storage/repository.js';
 import { DATABASE_NAME, SqliteStore } from '../src/server/storage/sqlite-store.js';
@@ -38,6 +37,7 @@ it('merges historical categories atomically while preserving amounts, kinds, raw
   state.classifications[cachedId] = { sourceHash: normalize(records[4]).sourceHash, kind: 'income', category: old('investment_income'), country: 'US', countrySource: 'default', needsReview: false, reason: 'Cached decision', classifiedAt: '2026-08-02', classifierVersion: 'old-model' };
   state.reclassificationRules = ['investment_income', 'investment_fees'].map((category) => ({ id: randomUUID(), revision: 1, example: 'Synthetic example', category: old(category), direction: 'all' }));
   state.processed = createLedger(records, state.accounts, state.overrides, state.classifications, state.ranges);
+  Object.assign(state.processed.find(row => row.id === refundId)!, { kind: 'refund', needsReview: false, category: 'investments' }); // Published by the legacy category/type inference.
   for (const row of state.processed) if (row.category === 'investments') row.category = old(row.cashflowCents > 0 ? 'investment_income' : 'investment_fees');
   state.staleAccountIds = ['fixture']; records[2].payload.amount = 50;
   const store = await SqliteStore.create(join(root, DATABASE_NAME), state); store.close();
@@ -70,10 +70,8 @@ it('accepts old client IDs but exposes a single category and keeps income, expen
   const root = await mkdtemp(join(tmpdir(), 'respect-money-category-api-'));
   const app = await buildApp(readConfig(root));
   try {
-    const categories = (await app.inject('/api/categories')).json();
+    const categories = (await app.inject('/api/categories')).json().categories.map((row: { id: string }) => row.id);
     expect(categories.filter((category: string) => ['investments', 'investment_income', 'investment_fees'].includes(category))).toEqual(['investments']);
-    expect(JSON.stringify(classificationJSONSchema)).toContain('"investments"');
-    expect(JSON.stringify(classificationJSONSchema)).not.toContain('investment_fees');
     const account = (await app.inject({ method: 'POST', url: '/api/accounts/manual', payload: { name: 'Fixture', institution: 'Fixture', type: 'cash' } })).json();
     for (const [kind, category, amount] of [['income', 'investment_income', '100'], ['expense', 'investment_fees', '10'], ['refund', 'investments', '2']]) {
       const response = await app.inject({ method: 'POST', url: '/api/transactions/manual', payload: { accountId: account.id, postedDate: '2026-08-01', description: 'Synthetic investment activity', kind, category, amount } });

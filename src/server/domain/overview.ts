@@ -14,7 +14,7 @@ function summarizeMonth(state: RepositoryState, accounts: Account[], rows: Ledge
   let grossExpenseCents = 0;
   let refundCents = 0;
   for (const row of rows) {
-    if (row.excluded || row.needsReview || row.currency !== 'USD' || !['expense', 'refund'].includes(row.kind)) continue;
+    if (row.excluded || row.categoryExcluded || row.needsReview || row.currency !== 'USD' || !['expense', 'refund'].includes(row.kind)) continue;
     const bucket = buckets.get(row.category) || { category: row.category, expenseCents: 0, refundCents: 0 };
     if (row.kind === 'expense') { bucket.expenseCents -= row.cashflowCents; grossExpenseCents -= row.cashflowCents; }
     else { bucket.refundCents += row.cashflowCents; refundCents += row.cashflowCents; }
