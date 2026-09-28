@@ -22,7 +22,7 @@ export function CategoryBreakdown({ data, accounts = '' }: { data: MonthSummary;
   const [params] = useSearchParams();
   const location = useLocation();
   const inLedger = location.pathname === '/';
-  const selectedCategories = inLedger && (params.get('mode') || 'expense') === 'expense' ? (params.get('categories') || '').split(',') : [];
+  const selectedCategories = inLedger && params.get('mode') === 'all' ? (params.get('categories') || '').split(',') : [];
   const categories = netCategoryShares(data.categories);
   return <section className="category-panel" aria-labelledby={titleId}>
     <div className="chart-heading"><div><h2 id={titleId}>{t("Spending by category")}</h2><p>{monthLabel(data.month)}  {t("· Based on spending after refunds")}</p></div><span className="currency-pill">USD</span></div>
@@ -32,7 +32,7 @@ export function CategoryBreakdown({ data, accounts = '' }: { data: MonthSummary;
       const selected = selectedCategories.includes(item.category);
       const query = resetTableFilters(inLedger ? params : new URLSearchParams());
       query.set('month', data.month);
-      if (!selected) { query.set('mode', 'expense'); query.set('categories', item.category); }
+      if (!selected) query.set('categories', item.category);
       if (accounts) query.set('accounts', accounts);
       return <li key={item.category}><Link to={`/?${query}`} className={selected ? 'selected' : undefined} title={item.refundCents > 0 ? t('Refunds deducted: {amount}', { amount: money(item.refundCents) }) : undefined} aria-current={selected ? 'true' : undefined} style={{ '--category-color': colors[item.category] ?? 'var(--cyan)' } as CSSProperties}>
         <CategoryIcon className="category-icon" category={item.category} size={36} />

@@ -46,6 +46,18 @@ test('configures a category and stacks spending, income, refund and balance card
   await expect(page.locator('tbody .ledger-col-kind')).toHaveText(tr('Refund'));
   await expect(page.locator('tbody .ledger-col-category')).not.toContainText(tr('Refund'));
   await expect(page.locator('.category-footnote')).toHaveCount(0);
+  const categoryCard = page.locator('.category-grid').getByRole('link', { name: /Fixture studio/ });
+  await categoryCard.click();
+  await expect(page).toHaveURL(/mode=all/);
+  await expect(page).toHaveURL(new RegExp(`categories=${category.id}`));
+  await expect(categoryCard).toHaveAttribute('aria-current', 'true');
+  await expect(page.getByRole('button', { name: tr('All transactions'), exact: true })).toHaveClass('active');
+  await expect(page.locator('tbody tr')).toHaveCount(3);
+  for (const kind of ['income', 'expense', 'refund']) await expect(page.locator('tbody')).toContainText(`Studio ${kind}`);
+  await expect(page.locator('.table-footer')).toContainText('$70.00');
+  await categoryCard.click();
+  await expect(page).not.toHaveURL(/categories=/);
+  await expect(categoryCard).not.toHaveAttribute('aria-current', 'true');
   await page.goto('/settings#categories');
   const editor = section.locator('details').filter({ hasText: 'Fixture studio' });
   await editor.locator('summary').click();

@@ -70,6 +70,7 @@ test('compares monthly cash flow, selects categories and handles zero income on 
   await page.getByRole('button', { name: new RegExp("^" + tr("{p0}-{p1}", { p0: "2026", p1: "6" }) + "，") }).click();
   await category.getByRole('link', { name: new RegExp(tr("Housing")) }).click();
   await expect(page).toHaveURL(/categories=housing/);
+  await expect(page).toHaveURL(/mode=all/);
   await expect(page.locator('tbody tr')).toHaveCount(1);
   await expect(page.locator('tbody')).toContainText('Overview housing 2026-06');
   await expect(page.getByRole('region', { name: tr("Spending by category"), exact: true })).toBeVisible();
