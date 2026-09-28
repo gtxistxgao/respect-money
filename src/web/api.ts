@@ -15,7 +15,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
 }
 export function money(cents: number, currency = 'USD') {
   if (!/^[A-Z]{3}$/.test(currency)) return t("{p0} (unknown currency)", { p0: (cents / 100).toFixed(2) });
-  return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency }).format(cents / 100);
+  return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency, currencyDisplay: currency === 'USD' ? 'narrowSymbol' : 'symbol' }).format(cents / 100);
 }
 export async function refreshData() { await queryClient.invalidateQueries(); }
 export type SettingsStatus = {

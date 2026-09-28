@@ -40,7 +40,7 @@ test('configures a category and stacks spending, income, refund and balance card
   await page.getByRole('button', { name: new RegExp(tr('Total refunds')) }).click();
   await expect(page.locator('tbody tr')).toHaveCount(1);
   await expect(page.locator('tbody')).toContainText('Studio refund');
-  await expect(page.locator('tbody .amount-cell')).toContainText('+US$10.00');
+  await expect(page.locator('tbody .amount-cell')).toContainText('+$10.00');
   await expect(page.locator('thead .ledger-col-category')).toContainText(tr('Category'));
   await expect(page.locator('thead .ledger-col-kind')).toHaveText(tr('Cash flow type'));
   await expect(page.locator('tbody .ledger-col-kind')).toHaveText(tr('Refund'));

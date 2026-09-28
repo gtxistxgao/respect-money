@@ -4,7 +4,7 @@ import type { MonthSummary } from '../../../shared/models.js';
 import { money } from '../../api.js';
 import { monthLabel, percentage } from './CategoryBreakdown.js';
 
-const compact = (cents: number) => new Intl.NumberFormat(intlLocale(), { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(cents / 100);
+const compact = (cents: number) => new Intl.NumberFormat(intlLocale(), { style: 'currency', currency: 'USD', currencyDisplay: 'narrowSymbol', notation: 'compact', maximumFractionDigits: 1 }).format(cents / 100);
 function niceLimit(value: number) {
   if (value <= 0) return 0;
   const step = 10 ** Math.floor(Math.log10(value));

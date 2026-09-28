@@ -29,8 +29,8 @@ test(`marks income, expenses and review rows as ${category} and handles editing 
   await expect(page.locator('tbody tr')).toHaveCount(0);
   await page.getByRole('button', { name: tr("All transactions"), exact: true }).click();
   await expect(page.locator('tbody tr')).toHaveCount(3);
-  await expect(page.locator('tbody tr').filter({ hasText: 'Incoming transfer' }).locator('.amount-cell')).toHaveText('+US$75.00');
-  await expect(page.locator('tbody tr').filter({ hasText: 'Outgoing transfer' }).locator('.amount-cell')).toHaveText('−US$100.00');
+  await expect(page.locator('tbody tr').filter({ hasText: 'Incoming transfer' }).locator('.amount-cell')).toHaveText('+$75.00');
+  await expect(page.locator('tbody tr').filter({ hasText: 'Outgoing transfer' }).locator('.amount-cell')).toHaveText('−$100.00');
   await expect(page.locator('tbody').getByText(tr("Excluded from income and spending"))).toHaveCount(3);
 
   await page.getByRole('button', { name: tr("Edit {p0}", { p0: "Incoming transfer" }), exact: true }).click();
