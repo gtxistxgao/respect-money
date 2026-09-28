@@ -205,16 +205,17 @@ textarea { resize: vertical; }
 .table-count { color: var(--subtle); font-size: 11px; white-space: nowrap; }
 .count-badge { padding: 1px 5px; border-radius: 4px; background: #d9a4411a; color: var(--orange); font-size: 10px; }
 .table-scroll { max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; position: relative; scrollbar-width: thin; scrollbar-color: var(--border) var(--surface); }
-.transaction-table { border-collapse: collapse; width: 100%; min-width: 1028px; table-layout: fixed; font-size: 12px; }
+.transaction-table { border-collapse: collapse; width: 100%; min-width: 1064px; table-layout: fixed; font-size: 12px; }
 .transaction-table th { padding: 9px 10px; background: var(--surface-raised); text-align: left; white-space: nowrap; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; font-weight: 500; }
 .transaction-table th:first-child, .transaction-table td:first-child { padding-left: 12px; width: 78px; }
 .transaction-table th:last-child, .transaction-table td:last-child { width: 80px; padding-right: 10px; }
 .transaction-table th.ledger-col-account { width: 170px; }
 .transaction-table th.ledger-col-amount { width: 120px; }
 .transaction-table th.ledger-col-category { width: 138px; }
-.transaction-table th.ledger-col-kind { width: 108px; }
-.cashflow-type-cell { display: grid; gap: 3px; }
-.cashflow-type-cell small { color: var(--subtle); font-size: 10px; line-height: 1.4; }
+.transaction-table th.ledger-col-kind { width: 144px; }
+.cashflow-type-cell { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+.cashflow-type-cell > span { flex-shrink: 0; }
+.cashflow-type-cell small { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--subtle); font-size: 10px; line-height: 1.4; }
 .transaction-table th.ledger-col-country { width: 104px; }
 .column-header { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .column-header > button { display: flex; align-items: center; gap: 5px; background: transparent; border: 0; color: inherit; padding: 3px 0; font-size: inherit; white-space: nowrap; }
@@ -500,7 +501,7 @@ textarea { resize: vertical; }
 .date-cell, .table-footer strong { font-family: var(--font-numeric); }
 @media (max-width: 760px) {
   :root { font-size: 12px; }
-  .transaction-table { min-width: 884px; table-layout: fixed; font-size: 11px; }
+  .transaction-table { min-width: 920px; table-layout: fixed; font-size: 11px; }
   .transaction-table th, .transaction-table td { padding: 7px 8px; }
   .transaction-table th:first-child, .transaction-table td:first-child { padding-left: 8px; width: 56px; }
   .transaction-table th.ledger-col-description { width: 150px; }

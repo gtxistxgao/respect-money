@@ -2,7 +2,7 @@ import { useCategories } from '../../categories.js';
 import { Select } from '../../Select.js';
 import { t } from "../../../i18n/index.js";
 import { useState } from 'react';
-import { Check, LoaderCircle } from 'lucide-react';
+import { LoaderCircle } from 'lucide-react';
 import { type Category, type LedgerRow, type TransactionOverride } from '../../../shared/models.js';
 import { api, refreshData } from '../../api.js';
 
@@ -46,7 +46,7 @@ export function InlineCategory({ row }: { row: LedgerRow }) {
           </Select>
         </div>
       </div>
-      {saving ? <LoaderCircle className="spin" size={13} aria-hidden="true" /> : row.classificationSource === 'manual' && <Check size={13} aria-label={t("Manually confirmed")} />}
+      {saving && <LoaderCircle className="spin" size={13} aria-hidden="true" />}
       <span className="sr-only" role="status">{saving ? t("Saving category…") : ''}</span>
     </div>
     {error && <div className="category-save-error" role="alert">{error}</div>}
