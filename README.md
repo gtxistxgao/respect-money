@@ -187,9 +187,9 @@ The asset chart groups connected accounts by account type using their full posit
 
 Manual assets include real estate, vehicles, cash, and investments. Enter a valuation, valuation date, and debt, or link an existing USD liability account to avoid double counting. Property estimates are entered manually; the Redfin link is a lookup shortcut, not an automated valuation or address upload.
 
-CNY equivalents are display estimates using the manually configured **Settings → USD to CNY rate** (default 6.7), not a live exchange rate. USD amounts remain the source values.
+In **Settings → Exchange rate**, turn display conversion on or off, enter a three-letter currency code such as CNY, CAD, or EUR, and set how many units equal **1 USD**. Save settings to apply. These are manual display estimates, not live exchange rates. Turning conversion off hides converted amounts while preserving the saved currency and rate. USD amounts remain the source values. Existing settings retain their CNY rate (default 6.7).
 
-**Update balances** saves one snapshot per Pacific calendar date; another update on that date replaces it. Each snapshot retains the names, values, debts, inclusion state, and exchange rate captured at the time. Partial updates mark stale or missing values; a complete account-refresh failure does not overwrite an existing snapshot. Manual-only portfolios can also save snapshots. No history is backfilled before connection, and nothing is collected while the backend is stopped.
+**Update balances** saves one snapshot per Pacific calendar date; another update on that date replaces it. Each snapshot retains the names, values, debts, inclusion state, and conversion currency, rate, and enabled state captured at the time. Partial updates mark stale or missing values; a complete account-refresh failure does not overwrite an existing snapshot. Manual-only portfolios can also save snapshots. No history is backfilled before connection, and nothing is collected while the backend is stopped.
 
 **Wealth → Balance history** starts with separate USD trends for net worth, total assets, and total debts. Click a date on any chart to select the matching snapshot below; the date picker and all three charts stay in sync. Keyboard users can focus a chart and use the arrow keys to move between saved dates. Hollow points identify partial updates.
 

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { defaultSettings } from '../config.js';
 import { claudeModels } from '../integrations/ai.js';
 import type { FastifyInstance } from 'fastify';
-import { settingsUpdateSchema, defaultUsdCnyRate, type PublicSettings, type ModelOption } from '../../shared/settings.js';
+import { settingsUpdateSchema, defaultUsdCnyRate, resolveDisplayConversion, type PublicSettings, type ModelOption } from '../../shared/settings.js';
 import { message as t } from '../../i18n/index.js';
 import type { Repository } from '../storage/repository.js';
 import type { AppConfig } from '../config.js';
@@ -15,7 +15,7 @@ export async function settingsRoutes(app: FastifyInstance, repository: Repositor
   const publicSettings = (): PublicSettings => {
     const { plaidSecret, ...settings } = repository.snapshot().settings!;
     const { plaidSecret: _secret, ...defaults } = defaultSettings(); void _secret;
-    return { ...defaults, ...settings, usdCnyRate: settings.usdCnyRate ?? defaultUsdCnyRate, hasPlaidSecret: Boolean(plaidSecret), defaultPrompt: classificationPrompt, runningPort };
+    return { ...defaults, ...settings, displayConversion: resolveDisplayConversion(settings), usdCnyRate: settings.usdCnyRate ?? defaultUsdCnyRate, hasPlaidSecret: Boolean(plaidSecret), defaultPrompt: classificationPrompt, runningPort };
   };
   let cached: { bin: string; expires: number; data: ModelOption[] } | undefined;
   let pending: { bin: string; promise: Promise<ModelOption[]> } | undefined;

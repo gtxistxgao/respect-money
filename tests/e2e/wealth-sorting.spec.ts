@@ -15,7 +15,7 @@ test('groups accounts by institution and sorts every balance column on desktop a
     account('card', 'Amex', 'Card', '9999', 'credit', -50000, '2026-09-22T19:00:00Z'),
     account('missing', 'Schwab', 'Missing', '', 'other', null, ''),
   ];
-  const summary: WealthSummary = { accounts, assets: [], assetsCents: 2109000, debtsCents: 50000, netWorthCents: 2059000, missingAccounts: 1, usdCnyRate: 6.7, allocation: [], errors: [], refreshing: false, needsRefresh: false, lastAttemptAt: '2026-09-22T19:00:00Z' };
+  const summary: WealthSummary = { displayConversion: { enabled: true, currency: 'CNY', rate: 6.7 }, accounts, assets: [], assetsCents: 2109000, debtsCents: 50000, netWorthCents: 2059000, missingAccounts: 1, usdCnyRate: 6.7, allocation: [], errors: [], refreshing: false, needsRefresh: false, lastAttemptAt: '2026-09-22T19:00:00Z' };
   await page.route('**/api/wealth', (route) => route.fulfill({ json: summary }));
   await page.goto('/wealth/accounts');
   const table = page.getByRole('table', { name: tr('Account balances'), exact: true });

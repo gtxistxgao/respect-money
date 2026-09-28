@@ -92,7 +92,7 @@ export class WealthService {
         const date = today(new Date(capturedAt));
         const history = wealth.history ||= {};
         history[date] = structuredClone({
-          date, capturedAt, usdCnyRate: summary.usdCnyRate,
+          date, capturedAt, usdCnyRate: summary.usdCnyRate, displayConversion: summary.displayConversion,
           assetsCents: summary.assetsCents, debtsCents: summary.debtsCents, netWorthCents: summary.netWorthCents,
           missingAccounts: summary.missingAccounts, partial: currentErrors.length > 0 || summary.missingAccounts > 0,
           accounts: summary.accounts.map((account) => ({ ...account, fresh: refreshedAccounts.has(account.id) })),

@@ -105,3 +105,34 @@ it('records manual-only assets, including a later zero balance, without fabricat
     expect(f.service.history()).toHaveLength(1);
   } finally { await f.close(); }
 });
+
+it('captures each snapshot currency and toggle without rewriting prior snapshots or USD balances', async () => {
+  const f = await fixture();
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-09-20T18:00:00Z'));
+    await f.refresh();
+    // Simulate a snapshot written before currency selection existed.
+    await f.repo.change(state => { delete state.wealth!.history!['2026-09-20'].displayConversion; }, false);
+    const legacy = f.service.historical('2026-09-20');
+    vi.setSystemTime(new Date('2026-09-21T18:00:00Z'));
+    await f.repo.change(state => { state.settings!.displayConversion = { enabled: true, currency: 'CAD', rate: 1.4 }; }, false);
+    await f.refresh();
+    const cad = f.service.historical('2026-09-21');
+    expect(cad).toMatchObject({ displayConversion: { enabled: true, currency: 'CAD', rate: 1.4 }, netWorthCents: legacy.netWorthCents });
+    vi.setSystemTime(new Date('2026-09-22T18:00:00Z'));
+    await f.repo.change(state => { state.settings!.displayConversion = { enabled: false, currency: 'EUR', rate: 0.9 }; }, false);
+    await f.refresh();
+    expect(f.service.historical('2026-09-22')).toMatchObject({ displayConversion: { enabled: false, currency: 'EUR', rate: 0.9 }, netWorthCents: legacy.netWorthCents });
+    expect(f.service.historical('2026-09-21')).toEqual(cad);
+    expect(f.service.historical('2026-09-20')).toEqual(legacy);
+    await f.repo.close();
+    const backup = await createBackup(f.dir);
+    await restoreBackup(f.dir, backup);
+    const restored = await new Repository(f.dir).initialize();
+    try {
+      expect(restored.snapshot().wealth!.history!['2026-09-21']).toEqual(cad);
+      expect(restored.snapshot().wealth!.history!['2026-09-20']).toEqual(legacy);
+    } finally { await restored.close(); }
+  } finally { vi.useRealTimers(); await f.close(); }
+});

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { displayConversionSchema, type DisplayConversion } from './settings.js';
 import { accountSchema, dateSchema, today, type Account } from './models.js';
 
 export const assetKinds = ['cash', 'stocks', 'funds', 'bonds', 'property', 'vehicle', 'investment', 'other'] as const;
@@ -25,6 +26,7 @@ export const balanceSchema = z.object({
 });
 export type AccountBalance = z.infer<typeof balanceSchema>;
 export const wealthSnapshotSchema = z.object({
+  displayConversion: displayConversionSchema.optional(),
   date: dateSchema, capturedAt: z.string(), usdCnyRate: z.number().positive(),
   assetsCents: z.number().int().nonnegative().safe(), debtsCents: z.number().int().nonnegative().safe(), netWorthCents: z.number().int().safe(),
   missingAccounts: z.number().int().nonnegative(), partial: z.boolean(),
@@ -48,6 +50,7 @@ export type WealthAccount = {
   id: string; name: string; institution: string; mask: string; type?: Account['type']; included: boolean; balance: AccountBalance | null;
 };
 export type WealthSummary = {
+  displayConversion: DisplayConversion;
   usdCnyRate: number;
   assetsCents: number; debtsCents: number; netWorthCents: number; missingAccounts: number;
   allocation: { kind: AssetKind; valueCents: number; percent: number }[];

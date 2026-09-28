@@ -13,7 +13,7 @@ function DetailTable({ entries, title, labels }: { entries: WealthEntry[]; title
     </table></div> : <p className="wealth-empty">{t('No items in this breakdown.')}</p>}
   </section>;
 }
-export function WealthDetails({ data, selection, cny, onClose }: { data: WealthSummary; selection: WealthSelection; cny: (cents: number) => string; onClose: () => void }) {
+export function WealthDetails({ data, selection, converted, onClose }: { data: WealthSummary; selection: WealthSelection; converted?: (cents: number) => string; onClose: () => void }) {
   const breakdown = wealthBreakdown(data);
   const assets = breakdown.assets.filter(row => !selection.kind || row.kind === selection.kind);
   const debts = breakdown.debts.filter(row => !selection.kind || row.kind === selection.kind);
@@ -21,7 +21,7 @@ export function WealthDetails({ data, selection, cny, onClose }: { data: WealthS
   const title = selection.side === 'net' ? t('Net worth details') : selection.kind ? t('View {p0} details', { p0: t(labels[selection.kind]) }) : t(selection.side === 'assets' ? 'Asset details' : 'Debt details');
   const value = selection.side === 'net' ? data.netWorthCents : (selection.side === 'assets' ? assets : debts).reduce((sum, row) => sum + row.valueCents, 0);
   return <Modal title={title} onClose={onClose} wide><div className="wealth-details">
-    <div className="wealth-details-total"><strong>{assetMoney(value)}</strong><small>{cny(value)}</small></div>
+    <div className="wealth-details-total"><strong>{assetMoney(value)}</strong>{converted && <small className="wealth-converted">{converted(value)}</small>}</div>
     {selection.side !== 'debts' && <DetailTable entries={assets} title="Asset details" labels={assetGroupLabels} />}
     {selection.side !== 'assets' && <DetailTable entries={debts} title="Debt details" labels={debtLabels} />}
     <p className="wealth-footnote">{t('Only items included in the current USD totals are shown. Assets use their gross value; linked debts are counted once.')}</p>

@@ -89,13 +89,13 @@ Do not reimport obsolete JSON in place of a recent SQLite backup. Keep the archi
 
 ## Settings, rules, and compatibility
 
-The optional `settings` object in `app_metadata.state` stores validated configuration with an independent revision. Initialization adds default settings to older databases without republishing the ledger. `readConfig()` reads this metadata to select the listening port. Plaid environment/client/secret/redirect, classifier model/prompt/executable/timeout, and optional USD/CNY display rate are stored here. Browser language remains in browser storage.
+The optional `settings` object in `app_metadata.state` stores validated configuration with an independent revision. Initialization adds default settings to older databases without republishing the ledger. `readConfig()` reads this metadata to select the listening port. Plaid environment/client/secret/redirect, classifier model/prompt/executable/timeout, and optional `displayConversion` settings (`enabled`, three-letter `currency`, and a positive `rate` per USD) are stored here. Legacy `usdCnyRate` values resolve to enabled CNY conversion when `displayConversion` is absent; reads do not rewrite old metadata. Browser language remains in browser storage.
 
 The public settings API omits the secret. Empty secret edits preserve it; explicit removal clears it. Active jobs prevent configuration changes. Prompt/model changes affect future classifications and their fingerprints, while existing results are retained until explicit reanalysis. Manual overrides retain precedence. The data root is fixed at `data/`; the selected Plaid environment no longer changes the directory.
 
 The optional `reclassificationRules` array stores examples, category, direction, ID, and per-rule revision. Previews are temporary process memory; applying selected matches atomically writes version-checked overrides and republishes. Rule examples can contain private financial details and belong only in local storage.
 
-Optional `wealth` metadata stores manual assets, cached balances, refresh errors, and daily history. Snapshots preserve their captured exchange rate and asset/account details rather than deriving them from today's state.
+Optional `wealth` metadata stores manual assets, cached balances, refresh errors, and daily history. Snapshots preserve their captured conversion currency, rate, enabled state, and asset/account details rather than deriving them from today's state.
 
 Startup normalizes the former `investment_income` and `investment_fees` categories to `investments` in overrides, splits, caches, published rows, and rules. Income, expense, and refund types remain distinct. Raw payloads and hashes remain unchanged. Legacy IDs remain readable for backup/client compatibility. Reopening normalized data does not repeat the migration.
 

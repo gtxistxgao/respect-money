@@ -284,7 +284,7 @@ textarea { resize: vertical; }
 .section-heading > div:not(.section-icon) { min-width: 0; }
 .section-heading h2 { font-size: 18px; font-weight: 600; }
 .section-heading p { font-size: 12px; margin-top: 7px; }
-.section-heading > .button, .section-heading > .currency-pill { margin-left: auto; }
+.section-heading > .button, .section-heading > .toggle, .section-heading > .currency-pill { margin-left: auto; }
 .section-icon, .account-symbol { display: grid; place-items: center; width: 42px; height: 42px; flex-shrink: 0; border-radius: 8px; background: var(--background); color: var(--accent); }
 .settings-section:nth-of-type(2) .account-symbol { color: var(--pink); }
 .settings-section:nth-of-type(3) .section-icon { color: var(--orange); }
@@ -587,9 +587,9 @@ textarea { resize: vertical; }
 .manual-asset-table th, .manual-asset-table td { padding: 6px 0; border-bottom: 1px solid var(--line); white-space: nowrap; line-height: 1.5; }
 .manual-asset-table th { text-align: left; color: var(--muted); font-weight: 400; }
 .manual-asset-table td { text-align: right; padding-left: 12px; font-weight: 500; }
-.manual-asset-table .wealth-cny { font-weight: 400; }
+.manual-asset-table .wealth-converted { font-weight: 400; }
 .manual-asset-table tr:last-child th, .manual-asset-table tr:last-child td { border-bottom: 0; }
-.manual-asset-table tr:last-child th, .manual-asset-table tr:last-child td:not(.wealth-cny) { color: var(--text); font-weight: 600; }
+.manual-asset-table tr:last-child th, .manual-asset-table tr:last-child td:not(.wealth-converted) { color: var(--text); font-weight: 600; }
 .asset-footer { display: flex; gap: 12px; padding: 5px 0 2px; overflow-x: auto; white-space: nowrap; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .wealth-equity-preview { display: flex; justify-content: space-between; gap: 12px; padding: 14px; border-radius: 6px; background: var(--amount-band); }
 .wealth-equity-preview strong { font-family: var(--font-numeric); }
@@ -634,10 +634,10 @@ textarea { resize: vertical; }
 .connection-choices .button { justify-content: space-between; white-space: normal; text-align: left; }
 .connection-choices .button > span:last-child { color: var(--muted); font-size: 11px; }
 
-.wealth-cny { font-size: 10px; font-weight: 400; color: var(--muted); line-height: 1.5; overflow-wrap: anywhere; }
+.wealth-converted { font-size: 10px; font-weight: 400; color: var(--muted); line-height: 1.5; overflow-wrap: anywhere; }
 @media (max-width: 380px) {
   .wealth-totals > :is(div, button):not(.wealth-net) { display: grid; grid-template-columns: auto minmax(0, 1fr); }
-  .wealth-totals > :is(div, button):not(.wealth-net) .wealth-cny { grid-column: 2; text-align: right; }
+  .wealth-totals > :is(div, button):not(.wealth-net) .wealth-converted { grid-column: 2; text-align: right; }
 }
 
 .wealth-history-toolbar { padding: 0 18px 12px; max-width: 300px; }

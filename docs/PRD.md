@@ -6,7 +6,7 @@ Updated for the implemented application on 2026-09-25. This document describes t
 
 Respect Money is a single-user personal finance application running on localhost. It combines manual bookkeeping, optional Plaid synchronization, and optional Codex classification with monthly review. The ledger and credentials live in `data/respect-money.sqlite`, excluded from version control.
 
-Accounting totals include USD only. Foreign purchases settled in USD use that settled amount; their country describes where the purchase occurred. Wealth tracks USD balances and manually entered assets. Its CNY equivalents use a configurable display rate, not live foreign-exchange data or conversion of non-USD accounts.
+Accounting totals include USD only. Foreign purchases settled in USD use that settled amount; their country describes where the purchase occurred. Wealth tracks USD balances and manually entered assets. Optional equivalents in a user-selected currency use a configurable display rate per USD, not live foreign-exchange data or conversion of non-USD accounts.
 
 Plaid and Codex require the user's own service access. No particular institution, subscription entitlement, or historical coverage is guaranteed by the app. Manual entry remains available without either integration.
 
@@ -66,9 +66,9 @@ Example-based reclassification is an explicit scan/preview/apply workflow. Saved
 
 All connected accounts participate regardless of their Accounting enable switch. Unknown or non-USD balances are excluded and identified. The app avoids counting both holdings and the containing account balance. Asset allocation groups connected accounts by account type; manual assets use their entered type. Debt allocation is separate, and linked liabilities are counted once.
 
-Manual assets store valuation date, value, and debt or a linked liability account. Real estate estimates are manually entered. Net worth is total assets minus total debts and can be negative. CNY equivalents use the saved configurable rate and are display estimates only.
+Manual assets store valuation date, value, and debt or a linked liability account. Real estate estimates are manually entered. Net worth is total assets minus total debts and can be negative. Converted equivalents use a saved three-letter currency code and positive rate per USD, and are display estimates only. The Exchange rate card has an enable/disable toggle plus currency and rate inputs. Disabling hides conversions without changing USD totals or clearing the saved inputs. Existing settings retain enabled CNY conversion and the saved rate.
 
-Successful balance updates save one snapshot per Pacific day, replacing that day's previous snapshot. Snapshots retain their captured values, names, debt links, inclusion state, and exchange rate, except when disconnected account data is explicitly removed. Partial data is marked; total account-refresh failure preserves an existing snapshot. Manual-only portfolios can save snapshots. History is not backfilled before connection.
+Successful balance updates save one snapshot per Pacific day, replacing that day's previous snapshot. Snapshots retain their captured values, names, debt links, inclusion state, and conversion currency, rate, and enabled state, except when disconnected account data is explicitly removed. Partial data is marked; total account-refresh failure preserves an existing snapshot. Manual-only portfolios can save snapshots. History is not backfilled before connection.
 
 ## Persistence and privacy
 

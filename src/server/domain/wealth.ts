@@ -1,5 +1,5 @@
 import type { AccountBase, InvestmentsHoldingsGetResponse, Security } from 'plaid';
-import { defaultUsdCnyRate } from '../../shared/settings.js';
+import { defaultUsdCnyRate, resolveDisplayConversion } from '../../shared/settings.js';
 import { emptyWealth, type AccountBalance, type AssetKind, type WealthSummary, type WealthAccount, type ManualAsset } from '../../shared/wealth.js';
 import type { RepositoryState } from '../storage/state.js';
 import { AppError, cents } from './ledger.js';
@@ -53,6 +53,7 @@ export function wealthSummary(state: RepositoryState, refreshing = false): Wealt
   }));
   return {
     ...wealthTotals(accounts, wealth.assets), accounts,
+    displayConversion: resolveDisplayConversion(state.settings),
     usdCnyRate: state.settings?.usdCnyRate ?? defaultUsdCnyRate,
     refreshing, lastAttemptAt: wealth.lastAttemptAt, errors: wealth.errors,
     needsRefresh: (!wealth.lastAttemptAt && Object.keys(state.connections).length > 0) || accounts.some((account) => !account.balance && (!wealth.lastAttemptAt || (state.accounts.find((a) => a.id === account.id)?.createdAt || '') > wealth.lastAttemptAt)),

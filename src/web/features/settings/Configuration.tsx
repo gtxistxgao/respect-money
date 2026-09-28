@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, queryClient } from '../../api.js';
 import { t } from '../../../i18n/index.js';
-import { defaultUsdCnyRate } from '../../../shared/settings.js';
 import type { PublicSettings, ApplicationSettings, ModelOption } from '../../../shared/settings.js';
 import { ErrorNotice } from '../../components.js';
 
@@ -49,7 +48,10 @@ export function ConfigurationFields({ config, section, busy }: { config: Configu
   const models = useQuery({ queryKey: ['models', provider, isClaude ? config.data?.claudeBin : config.data?.codexBin], queryFn: () => api<ModelOption[]>(`/settings/models?provider=${provider}`), enabled: section === 'classification' && Boolean(values), staleTime: 60000, retry: false });
   if (!values) return <p className="muted">{t('Loading settings…')}</p>;
   return <fieldset className="configuration-fields" disabled={config.saving}>
-    {section === 'currency' && <div className="configuration-grid"><label>{t('CNY per 1 USD')}<input type="number" inputMode="decimal" min="0.0001" max="1000" step="any" value={values.usdCnyRate === 0 ? '' : values.usdCnyRate ?? defaultUsdCnyRate} onChange={(event) => config.update({ usdCnyRate: event.target.value === '' ? 0 : Number(event.target.value) })} /></label><p className="muted small">{t('Used for approximate CNY values on asset cards. USD amounts remain unchanged.')}</p></div>}
+    {section === 'currency' && <><div className="configuration-grid">
+      <label>{t('Currency code')}<input disabled={!values.displayConversion.enabled} maxLength={3} autoCapitalize="characters" spellCheck={false} placeholder="CNY, CAD, EUR" value={values.displayConversion.currency} onChange={(event) => config.update({ displayConversion: { ...values.displayConversion, currency: event.target.value.toUpperCase() } })} /></label>
+      <label>{t('Exchange rate per 1 USD')}<input disabled={!values.displayConversion.enabled} type="number" inputMode="decimal" min="0" step="any" value={values.displayConversion.rate || ''} onChange={(event) => config.update({ displayConversion: { ...values.displayConversion, rate: event.target.value === '' ? 0 : Number(event.target.value) } })} /></label>
+    </div><p className="muted small">{t('Enter a three-letter currency code and the amount of that currency equal to 1 USD. Used only for display estimates; USD amounts stay unchanged.')}</p></>}
     {section === 'plaid' && <><div className="configuration-grid">
       <label>{t('Plaid environment')}<Select value={values.plaidEnv} onValueChange={(nextValue) => config.update({ plaidEnv: nextValue as ApplicationSettings['plaidEnv'] })}><option value="sandbox">{t('Sandbox')}</option><option value="production">{t('Production')}</option></Select></label>
       <label>{t('Plaid client ID')}<input autoComplete="off" value={values.plaidClientId} onChange={(event) => config.update({ plaidClientId: event.target.value })} /></label>

@@ -1,4 +1,5 @@
-import { Decimal } from 'decimal.js';
+import { resolveDisplayConversion } from '../../../shared/settings.js';
+import { convertedAmount } from './conversion.js';
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -38,26 +39,23 @@ export function Wealth({ view = 'overview' }: { view?: WealthPage }) {
   const [selection, setSelection] = useState<WealthSelection | null>(null);
   const data = query.data;
   const breakdown = data ? wealthBreakdown(data) : undefined;
-  const cny = (cents: number) => {
-    const yuan = new Decimal(cents).times(data!.usdCnyRate).div(100);
-    const format = (value: Decimal) => new Intl.NumberFormat(intlLocale(), { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value.toDecimalPlaces(0, Decimal.ROUND_HALF_UP).toNumber());
-    return t('Approx. {p0} CNY ({p1} × 10,000)', { p0: format(yuan), p1: format(yuan.div(10000)) });
-  };
+  const conversion = resolveDisplayConversion(data);
+  const converted = conversion.enabled ? (cents: number) => convertedAmount(cents, conversion) : undefined;
   return <main className="wealth-main">
     <div className="page-heading"><div><h1>{t(page.title)}</h1><p>{t(page.description)}</p></div><div className="heading-actions">
       <button className="button secondary" disabled={refresh.isPending || data?.refreshing} onClick={() => refresh.mutate()}><RefreshCw size={14} className={data?.refreshing ? 'spin' : ''} />{data?.refreshing ? t('Updating assets…') : t('Update balances')}</button>
       {view === 'overview' && <button className="button primary" onClick={() => setEditing('new')}><Plus size={15} />{t('Add asset')}</button>}
     </div></div>
     <ErrorNotice error={query.error || refresh.error} />
-    {view === 'history' ? <BalanceHistory refreshing={Boolean(data?.refreshing)} /> : !data ? query.isPending && <Loading /> : <>
+    {view === 'history' ? <BalanceHistory refreshing={Boolean(data?.refreshing)} conversionEnabled={Boolean(data && conversion.enabled)} /> : !data ? query.isPending && <Loading /> : <>
       {view === 'overview' && <>
       <section className="wealth-totals" aria-label={t('Asset summary')}>
-        <button className="wealth-total-button" aria-label={t('Asset details')} onClick={() => setSelection({ side: 'assets' })}><span>{t('Total assets')}<ChevronRight size={12} aria-hidden="true" /></span><strong data-testid="total-assets">{assetMoney(data.assetsCents)}</strong><small className="wealth-cny" data-testid="total-assets-cny">{cny(data.assetsCents)}</small></button>
-        <button className="wealth-total-button" aria-label={t('Debt details')} onClick={() => setSelection({ side: 'debts' })}><span>{t('Total debts')}<ChevronRight size={12} aria-hidden="true" /></span><strong data-testid="total-debts">{assetMoney(data.debtsCents)}</strong><small className="wealth-cny">{cny(data.debtsCents)}</small></button>
-        <button className="wealth-net wealth-total-button" aria-label={t('Net worth details')} onClick={() => setSelection({ side: 'net' })}><span>{t('Net worth')} <small>USD</small></span><strong data-testid="net-worth">{assetMoney(data.netWorthCents)}</strong><small className="wealth-cny" data-testid="net-worth-cny">{cny(data.netWorthCents)}</small><small>{t('Assets minus debts')} <ChevronRight size={12} aria-hidden="true" /></small></button>
+        <button className="wealth-total-button" aria-label={t('Asset details')} onClick={() => setSelection({ side: 'assets' })}><span>{t('Total assets')}<ChevronRight size={12} aria-hidden="true" /></span><strong data-testid="total-assets">{assetMoney(data.assetsCents)}</strong>{converted && <small className="wealth-converted" data-testid="total-assets-converted">{converted(data.assetsCents)}</small>}</button>
+        <button className="wealth-total-button" aria-label={t('Debt details')} onClick={() => setSelection({ side: 'debts' })}><span>{t('Total debts')}<ChevronRight size={12} aria-hidden="true" /></span><strong data-testid="total-debts">{assetMoney(data.debtsCents)}</strong>{converted && <small className="wealth-converted">{converted(data.debtsCents)}</small>}</button>
+        <button className="wealth-net wealth-total-button" aria-label={t('Net worth details')} onClick={() => setSelection({ side: 'net' })}><span>{t('Net worth')} <small>USD</small></span><strong data-testid="net-worth">{assetMoney(data.netWorthCents)}</strong>{converted && <small className="wealth-converted" data-testid="net-worth-converted">{converted(data.netWorthCents)}</small>}<small>{t('Assets minus debts')} <ChevronRight size={12} aria-hidden="true" /></small></button>
       </section>
       </>}
-      <div className="wealth-context"><Link to="/settings#currency">{t('1 USD = {p0} CNY', { p0: data.usdCnyRate })}</Link><span>{t('Known USD balances and manual estimates. Bank balances may be delayed.')}</span>{data.lastAttemptAt && <span>{t('Last request: {p0} PT', { p0: receivedAt(data.lastAttemptAt) })}</span>}</div>
+      <div className="wealth-context">{converted && <Link to="/settings#currency">{t('1 USD = {rate} {currency}', { rate: conversion.rate, currency: conversion.currency })}</Link>}<span>{t('Known USD balances and manual estimates. Bank balances may be delayed.')}</span>{data.lastAttemptAt && <span>{t('Last request: {p0} PT', { p0: receivedAt(data.lastAttemptAt) })}</span>}</div>
       {data.missingAccounts > 0 && <div className="notice" role="status">{t('{p0} accounts have missing or non-USD balances and are excluded from these totals.', { p0: data.missingAccounts })}</div>}
       {data.errors.length > 0 && <div className="notice notice-error" role="alert"><div><strong>{t('Some balances or holdings could not be updated. Previous balances are retained.')}</strong>{data.errors.map((error, index) => <p key={index}>{error.name}{error.name && ': '}{error.error}</p>)}</div></div>}
       {view === 'overview' ? <>
@@ -75,7 +73,7 @@ export function Wealth({ view = 'overview' }: { view?: WealthPage }) {
           return <article className="manual-asset" key={asset.id} aria-label={asset.name}>
             <div className="manual-asset-heading"><h3 title={asset.name}>{asset.name}</h3><span>{t(assetLabels[asset.kind])}</span><button className="icon-button" onClick={() => setEditing(asset)} aria-label={t('Edit {p0}', { p0: asset.name })}><Pencil size={13} /></button><button className="text-button" onClick={() => { remove.reset(); setRemoving(asset); }} aria-label={t('Remove {p0}', { p0: asset.name })}>{t('Remove')}</button></div>
             <div className="account-table-scroll" tabIndex={0} role="region" aria-label={asset.name}>
-              <table className="manual-asset-table" aria-label={asset.name}><tbody>{rows.map((row) => <tr key={row.label}><th scope="row">{t(row.label)}</th><td>{row.cents === null ? '—' : assetMoney(row.cents)}</td><td className="wealth-cny">{row.cents === null ? '—' : cny(row.cents)}</td></tr>)}</tbody></table>
+              <table className="manual-asset-table" aria-label={asset.name}><tbody>{rows.map((row) => <tr key={row.label}><th scope="row">{t(row.label)}</th><td>{row.cents === null ? '—' : assetMoney(row.cents)}</td>{converted && <td className="wealth-converted">{row.cents === null ? '—' : converted(row.cents)}</td>}</tr>)}</tbody></table>
             </div>
             <div className="asset-footer">{asset.kind === 'property' && asset.address && <span>{asset.address}</span>}{asset.kind === 'vehicle' && asset.vehicleModel && <span>{asset.vehicleModel}</span>}<span>{t('Valued on {p0}', { p0: asset.valuationDate })}</span>{asset.debtAccountId && <span>{t('Debt linked to account; counted once.')}</span>}</div>
           </article>;
@@ -88,7 +86,7 @@ export function Wealth({ view = 'overview' }: { view?: WealthPage }) {
         </div>
       </section>}
     </>}
-    {selection && data && <WealthDetails data={data} selection={selection} cny={cny} onClose={() => setSelection(null)} />}
+    {selection && data && <WealthDetails data={data} selection={selection} converted={converted} onClose={() => setSelection(null)} />}
     {editing && <AssetForm asset={editing === 'new' ? undefined : editing} accounts={data?.accounts || []} assets={data?.assets || []} onClose={() => setEditing(null)} />}
     {removing && <Modal title={t('Remove asset')} onClose={() => setRemoving(null)}><div className="form-body"><p>{t('Remove {p0} from your assets? This does not delete bank accounts or transactions.', { p0: removing.name })}</p><ErrorNotice error={remove.error} /><div className="form-actions"><button className="button secondary" onClick={() => setRemoving(null)}>{t('Cancel')}</button><button className="button secondary danger-text" disabled={remove.isPending} onClick={() => remove.mutate(removing)}>{t('Remove asset')}</button></div></div></Modal>}
   </main>;

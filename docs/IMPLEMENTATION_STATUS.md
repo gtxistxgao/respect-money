@@ -8,7 +8,7 @@ Updated 2026-09-25. This file separates the implemented application, checks run 
 - Unified Plaid connections, account selection/update mode, incremental Transactions and ranged Investments synchronization, coverage reporting, retry, explicit account merges, and disconnection with associated local data deleted and remaining historical totals recalculated.
 - UI-managed credentials, prompts, models, and advanced settings; isolated classifier batches, cached results, bank-rule fallback, and explicit example-based reclassification.
 - SQLite persistence, serial writes and revision checks, legacy JSON/settings migration, verified backups and transactional restore.
-- Wealth overview, account/debt allocation, manual assets, configurable CNY display estimates, account balance tables, and daily Pacific-date snapshots with interactive net worth, asset, and debt trends.
+- Wealth overview, account/debt allocation, manual assets, optional display estimates with configurable currency and exchange rate, account balance tables, and daily Pacific-date snapshots with interactive net worth, asset, and debt trends.
 - A standalone static project page with fictional data, plus versioned Markdown documentation in `docs/`.
 
 ## Publication review validation

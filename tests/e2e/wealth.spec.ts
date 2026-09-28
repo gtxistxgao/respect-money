@@ -16,7 +16,7 @@ test('aggregates connected balances and supports property, vehicle and mobile as
   // the disconnect scenario. Refresh explicitly before checking their balances.
   await page.getByRole('button', { name: tr('Update balances'), exact: true }).click();
   await expect(page.getByTestId('total-assets')).toHaveText(/87,500$/);
-  await expect(page.getByTestId('total-assets-cny')).toContainText('586,250');
+  await expect(page.getByTestId('total-assets-converted')).toContainText('586,250');
   await expect(page.getByRole('region', { name: tr('Asset allocation'), exact: true }).locator('.allocation-list')).toContainText(tr('Investment account'));
   await expect(page.getByRole('region', { name: tr('Asset allocation'), exact: true }).locator('.allocation-list')).toContainText('85.7%');
   const wealthNav = page.getByRole('navigation', { name: tr('Wealth sections'), exact: true });
@@ -45,7 +45,7 @@ test('aggregates connected balances and supports property, vehicle and mobile as
   await page.getByLabel(tr('Outstanding debt (USD)'), { exact: true }).fill('5000');
   await page.getByRole('button', { name: tr('Save asset'), exact: true }).click();
   await expect(page.getByTestId('net-worth')).toHaveText(/407,500$/);
-  await expect(page.getByTestId('net-worth-cny')).toContainText('2,730,250');
+  await expect(page.getByTestId('net-worth-converted')).toContainText('2,730,250');
   const allocation = page.getByRole('region', { name: tr('Asset allocation'), exact: true });
   const debtAllocation = page.getByRole('region', { name: tr('Debt allocation'), exact: true });
   await expect(debtAllocation).toContainText(tr('Mortgages'));
@@ -69,16 +69,16 @@ test('aggregates connected balances and supports property, vehicle and mobile as
   await page.keyboard.press('Escape');
 
   await expect(page.getByRole('article', { name: 'Fixture home' })).toContainText('5,360,000');
-  await page.getByRole('link', { name: tr('1 USD = {p0} CNY', { p0: 6.7 }), exact: true }).click();
-  await expect(page.getByLabel(tr('CNY per 1 USD'))).toHaveValue('6.7');
-  await page.getByLabel(tr('CNY per 1 USD')).fill('7');
+  await page.getByRole('link', { name: tr('1 USD = {rate} {currency}', { rate: 6.7, currency: 'CNY' }), exact: true }).click();
+  await expect(page.getByLabel(tr('Exchange rate per 1 USD'))).toHaveValue('6.7');
+  await page.getByLabel(tr('Exchange rate per 1 USD')).fill('7');
   await page.locator('#currency').getByRole('button', { name: tr('Save settings'), exact: true }).click();
   await expect(page.getByText(tr('Settings saved. Future tasks will use the new configuration.'), { exact: true })).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel(tr('CNY per 1 USD'))).toHaveValue('7');
+  await expect(page.getByLabel(tr('Exchange rate per 1 USD'))).toHaveValue('7');
   await page.goto('/wealth');
   await expect(page.getByTestId('net-worth')).toHaveText(/407,500$/);
-  await expect(page.getByTestId('net-worth-cny')).toContainText('2,852,500');
+  await expect(page.getByTestId('net-worth-converted')).toContainText('2,852,500');
   await expect(page.getByRole('article', { name: 'Fixture home' })).toContainText('5,600,000');
   await page.reload();
   await expect(page.getByRole('article', { name: 'Fixture car' })).toContainText('Toyota RAV4 2022');

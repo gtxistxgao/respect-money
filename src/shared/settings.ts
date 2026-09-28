@@ -1,11 +1,22 @@
 import { z } from 'zod';
 
 export const defaultUsdCnyRate = 6.7;
+export const displayConversionSchema = z.strictObject({
+  enabled: z.boolean(),
+  currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/),
+  rate: z.number().positive(),
+});
+export type DisplayConversion = z.infer<typeof displayConversionSchema>;
+// Resolve legacy settings and snapshots without rewriting their stored data.
+export function resolveDisplayConversion(value?: { displayConversion?: DisplayConversion; usdCnyRate?: number }): DisplayConversion {
+  return value?.displayConversion ?? { enabled: true, currency: 'CNY', rate: value?.usdCnyRate ?? defaultUsdCnyRate };
+}
 
 export const applicationSettingsSchema = z.strictObject({
   revision: z.number().int().nonnegative(),
   // Keep older stored settings unchanged; resolve the default when reading.
   usdCnyRate: z.number().positive().max(1000).optional(),
+  displayConversion: displayConversionSchema.optional(),
   port: z.number().int().min(1).max(65535),
   plaidEnv: z.enum(['sandbox', 'production']),
   plaidClientId: z.string().trim().max(200),
@@ -23,7 +34,7 @@ export const applicationSettingsSchema = z.strictObject({
 });
 export type ApplicationSettings = z.infer<typeof applicationSettingsSchema>;
 export type PublicSettings = Omit<ApplicationSettings, 'plaidSecret'> & {
-  usdCnyRate: number; hasPlaidSecret: boolean; defaultPrompt: string; runningPort: number;
+  displayConversion: DisplayConversion; usdCnyRate: number; hasPlaidSecret: boolean; defaultPrompt: string; runningPort: number;
 };
 export type ModelOption = { model: string; displayName: string; isDefault: boolean };
 export const settingsUpdateSchema = applicationSettingsSchema.omit({ revision: true }).partial().extend({
