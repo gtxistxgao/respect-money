@@ -33,9 +33,12 @@ export function CategoryBreakdown({ data, accounts = '' }: { data: MonthSummary;
       if (!selected) { query.set('mode', 'expense'); query.set('categories', item.category); }
       if (accounts) query.set('accounts', accounts);
       return <li key={item.category}><Link to={`/?${query}`} className={selected ? 'selected' : undefined} aria-current={selected ? 'true' : undefined} style={{ '--category-color': colors[item.category] } as CSSProperties}>
-        <span className="category-item-heading"><span className="category-item-title"><CategoryIcon className="category-icon" category={item.category} /><span className="category-name">{categoryLabel(item.category)}</span></span>{selected ? <Check size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}</span>
-        <span className="category-item-values"><span>{money(item.expenseCents)}</span><strong>{percentage(share)}</strong></span>
-        <span className="category-share-track" role="meter" aria-label={categoryLabel(item.category)} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-valuetext={percentage(share)}><span style={{ width: `${percent}%` }} /></span>
+        <CategoryIcon className="category-icon" category={item.category} size={36} />
+        <span className="category-item-content">
+          <span className="category-item-heading"><span className="category-name">{categoryLabel(item.category)}</span>{selected ? <Check size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}</span>
+          <span className="category-item-values"><span>{money(item.expenseCents)}</span><strong>{percentage(share)}</strong></span>
+          <span className="category-share-track" role="meter" aria-label={categoryLabel(item.category)} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-valuetext={percentage(share)}><span style={{ width: `${percent}%` }} /></span>
+        </span>
       </Link></li>;
     })}</ul> : <div className="chart-empty"><p>{data.transactionCount ? t("No eligible spending this month.") : t("No received transactions this month.")}</p></div>}
     <div className="category-footnote"><span>{t("Gross spending")} <strong>{money(data.grossExpenseCents)}</strong></span><span>{t("Received refunds")} <strong>{money(data.refundCents)}</strong></span><span>{t("Net spending")} <strong>{money(data.expenseCents)}</strong></span></div>
