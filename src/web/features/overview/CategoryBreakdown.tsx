@@ -2,7 +2,6 @@ import { useCategories } from '../../categories.js';
 import { t, intlLocale, formatMonth } from "../../../i18n/index.js";
 import { useId, type CSSProperties } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { Check, ChevronRight } from 'lucide-react';
 import { type Category, type MonthSummary } from '../../../shared/models.js';
 import { money } from '../../api.js';
 import { CategoryIcon } from '../../CategoryIcon.js';
@@ -35,13 +34,11 @@ export function CategoryBreakdown({ data, accounts = '' }: { data: MonthSummary;
       query.set('month', data.month);
       if (!selected) { query.set('mode', 'expense'); query.set('categories', item.category); }
       if (accounts) query.set('accounts', accounts);
-      return <li key={item.category}><Link to={`/?${query}`} className={selected ? 'selected' : undefined} aria-current={selected ? 'true' : undefined} style={{ '--category-color': colors[item.category] ?? 'var(--cyan)' } as CSSProperties}>
+      return <li key={item.category}><Link to={`/?${query}`} className={selected ? 'selected' : undefined} title={item.refundCents > 0 ? t('Refunds deducted: {amount}', { amount: money(item.refundCents) }) : undefined} aria-current={selected ? 'true' : undefined} style={{ '--category-color': colors[item.category] ?? 'var(--cyan)' } as CSSProperties}>
         <CategoryIcon className="category-icon" category={item.category} size={36} />
         <span className="category-item-content">
-          <span className="category-item-heading"><span className="category-name">{categoryLabel(item.category)}</span>{selected ? <Check size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}</span>
-          <span className="category-item-values"><span>{money(item.netExpenseCents)}</span><strong>{item.netExpenseCents < 0 ? t('Net refund') : percentage(share)}</strong></span>
+          <span className="category-item-heading"><span className="category-name" title={categoryLabel(item.category)}>{categoryLabel(item.category)}</span><span className="category-amount">{money(item.netExpenseCents)}</span><strong className="category-percentage">{item.netExpenseCents < 0 ? t('Net refund') : percentage(share)}</strong></span>
           <span className="category-share-track" role="meter" aria-label={categoryLabel(item.category)} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-valuetext={percentage(share)}><span style={{ width: `${percent}%` }} /></span>
-          {item.refundCents > 0 && <span className="category-refund-note">{t('Refunds deducted: {amount}', { amount: money(item.refundCents) })}</span>}
         </span>
       </Link></li>;
     })}</ul> : <div className="chart-empty"><p>{data.transactionCount ? t("No eligible spending this month.") : t("No received transactions this month.")}</p></div>}
