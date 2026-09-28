@@ -16,7 +16,7 @@ function needsModel(tx: SourceTransaction) {
 
 export class ClassificationService {
   readonly version: string;
-  constructor(private repository: Repository, private classifyBatch: ClassifyBatch, fingerprint: string) { this.version = hash([CLASSIFIER_VERSION, fingerprint]); }
+  constructor(private repository: Repository, private classifyBatch: ClassifyBatch, fingerprint: string, private provider: 'codex' | 'claude' = 'codex') { this.version = hash([CLASSIFIER_VERSION, fingerprint]); }
   publish: Publisher = async (accountIds, force, progress, range?: DateRange) => {
     const snapshot = this.repository.snapshot();
     const sources = Object.values(snapshot.records).map(normalize).filter((tx) => accountIds.includes(tx.accountId) && !tx.pending && !tx.removed && tx.currency === 'USD'
@@ -68,7 +68,7 @@ export class ClassificationService {
             const manual = item.source.source === 'manual';
             const kind = manual ? item.source.kind : suggestion.needsReview ? 'review' : suggestion.kind;
             state.classifications[item.source.id] = {
-              sourceHash: item.source.sourceHash, kind, category: suggestion.category,
+              provider: this.provider, sourceHash: item.source.sourceHash, kind, category: suggestion.category,
               country: suggestion.country || 'US', countrySource: suggestion.country ? 'ai' : 'default',
               needsReview: kind === 'review', reason: suggestion.reason, classifierVersion: this.version, classifiedAt: new Date().toISOString(),
             };

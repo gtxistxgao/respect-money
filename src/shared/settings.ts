@@ -11,6 +11,11 @@ export const applicationSettingsSchema = z.strictObject({
   plaidClientId: z.string().trim().max(200),
   plaidSecret: z.string().trim().max(1000),
   plaidRedirectUri: z.union([z.literal(''), z.url().refine((value) => ['http:', 'https:'].includes(new URL(value).protocol))]),
+  // Optional for existing databases and backups; missing provider means Codex.
+  classificationProvider: z.enum(['codex', 'claude']).optional(),
+  claudeBin: z.string().trim().min(1).max(1000).optional(),
+  claudeModel: z.string().trim().max(200).regex(/^[a-zA-Z0-9._:/-]*$/).optional(),
+  claudeTimeoutMs: z.number().int().min(1000).max(600000).optional(),
   codexBin: z.string().trim().min(1).max(1000),
   codexModel: z.string().trim().max(200).regex(/^[a-zA-Z0-9._:/-]*$/),
   codexTimeoutMs: z.number().int().min(1000).max(600000),

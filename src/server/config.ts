@@ -6,7 +6,7 @@ import { classificationPrompt } from './integrations/codex/classifier.js';
 
 export function defaultSettings(): ApplicationSettings {
   return { revision: 0, port: 3001, plaidEnv: 'sandbox', plaidClientId: '', plaidSecret: '',
-    plaidRedirectUri: '', codexBin: 'codex', codexModel: '', codexTimeoutMs: 120000, classificationPrompt };
+    plaidRedirectUri: '', classificationProvider: 'codex', claudeBin: 'claude', claudeModel: '', claudeTimeoutMs: 120000, codexBin: 'codex', codexModel: '', codexTimeoutMs: 120000, classificationPrompt };
 }
 // Application configuration lives alongside the ledger in SQLite. OS environment
 // variables are used only by subprocesses for executable discovery and CLI login.

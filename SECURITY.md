@@ -12,9 +12,11 @@ The settings API omits the Plaid secret. Bank passwords are handled by Plaid Lin
 
 ## External services
 
-Bank linking and synchronization contact Plaid and the selected institution. Automatic classification sends selected transaction descriptions, dates, amounts, and location/category clues to the configured Codex model service. Example-based scans send the supplied rules and candidate details. Local persistence does not make these integrations offline.
+Bank linking and synchronization contact Plaid and the selected institution. Automatic classification sends selected transaction descriptions, dates, amounts, and location/category clues to the selected Codex or Claude model service. Example-based scans send the supplied rules and candidate details. Local persistence does not make these integrations offline.
 
-The classifier uses a temporary working directory, an allowlisted subprocess environment, disabled tools, ephemeral execution, output validation, and cleanup. It does not intentionally supply bank tokens or repository files to the model. These controls depend on the installed CLI and are not a general operating-system isolation boundary. The app does not sandbox arbitrary executables configured by its local user. `npm run codex:check` uses fictional input but still contacts the configured service.
+The classifier uses a temporary working directory, an allowlisted subprocess environment, disabled tools, ephemeral execution, output validation, and cleanup. It does not intentionally supply bank tokens or repository files to the model. These controls depend on the installed CLI and are not a general operating-system isolation boundary. The app does not sandbox arbitrary executables configured by its local user. `npm run ai:check`, `npm run codex:check`, and `npm run claude:check` use fictional input but still contact the configured service.
+
+Claude Code runs in headless print mode with safe mode, an empty built-in tool list, an empty strict MCP configuration, disabled hooks, no Chrome integration, and no session persistence. User/project settings and custom authentication helpers are excluded. The environment retains the local login location and, when set, `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN`; it excludes Plaid credentials and unrelated secrets. Safe mode preserves subscription login, unlike bare mode. Administrator-managed CLI policy can still apply; these controls are not an OS sandbox. JSON results are accepted only after successful process exit and a successful structured-output envelope, then pass the same transaction validators as Codex. Timeouts and oversized output terminate the child process.
 
 ## Reporting an issue
 

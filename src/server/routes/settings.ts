@@ -1,3 +1,6 @@
+import { z } from 'zod';
+import { defaultSettings } from '../config.js';
+import { claudeModels } from '../integrations/ai.js';
 import type { FastifyInstance } from 'fastify';
 import { settingsUpdateSchema, defaultUsdCnyRate, type PublicSettings, type ModelOption } from '../../shared/settings.js';
 import { message as t } from '../../i18n/index.js';
@@ -11,12 +14,15 @@ export async function settingsRoutes(app: FastifyInstance, repository: Repositor
   const runningPort = config.port;
   const publicSettings = (): PublicSettings => {
     const { plaidSecret, ...settings } = repository.snapshot().settings!;
-    return { ...settings, usdCnyRate: settings.usdCnyRate ?? defaultUsdCnyRate, hasPlaidSecret: Boolean(plaidSecret), defaultPrompt: classificationPrompt, runningPort };
+    const { plaidSecret: _secret, ...defaults } = defaultSettings(); void _secret;
+    return { ...defaults, ...settings, usdCnyRate: settings.usdCnyRate ?? defaultUsdCnyRate, hasPlaidSecret: Boolean(plaidSecret), defaultPrompt: classificationPrompt, runningPort };
   };
   let cached: { bin: string; expires: number; data: ModelOption[] } | undefined;
   let pending: { bin: string; promise: Promise<ModelOption[]> } | undefined;
   app.get('/api/settings', async () => publicSettings());
-  app.get('/api/settings/models', async () => {
+  app.get('/api/settings/models', async (request) => {
+    const { provider = config.classificationProvider ?? 'codex' } = z.object({ provider: z.enum(['codex', 'claude']).optional() }).parse(request.query);
+    if (provider === 'claude') return claudeModels;
     const bin = config.codexBin;
     try {
       if (cached?.bin === bin && cached.expires > Date.now()) return cached.data;

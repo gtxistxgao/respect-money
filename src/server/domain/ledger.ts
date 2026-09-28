@@ -150,7 +150,7 @@ export function createLedger(
       splitCount: override?.splits?.length || 0,
       needsReview: kind === 'review' || (category !== 'internal_transfer' && !categoryConfirmed && override?.kind === undefined && !ownTransfers.has(tx.id) && Boolean(classification?.needsReview)),
       reason: brokenMatch ? t("The linked bank transaction was removed or changed. Review the manual entry.") : invalidSplits ? t("The source amount changed. Review the split amounts.") : reinvestmentDecision.get(tx.id) === 'review' ? t("This may be an automatic reinvestment. Confirm whether cash was actually received.") : classification?.reason || '',
-      classificationSource: tx.source === 'manual' && tx.category !== 'uncategorized' || override && (override.kind || override.category || override.country) ? 'manual' : classification ? 'codex' : 'rules',
+      classificationSource: tx.source === 'manual' && tx.category !== 'uncategorized' || override && (override.kind || override.category || override.country) ? 'manual' : classification ? classification.provider ?? 'codex' : 'rules',
       notes: override?.notes ?? tx.notes, excluded, duplicateOf: override?.duplicateOf,
       classifiedAt: override?.updatedAt || classification?.classifiedAt, classifierVersion: classification?.classifierVersion,
     } as LedgerRow;

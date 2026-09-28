@@ -44,3 +44,38 @@ test('edits prompts and models, persists credentials securely, and restores defa
   const current = await (await page.request.get('/api/settings')).json();
   expect((await page.request.put('/api/settings', { data: { revision: current.revision, plaidSecret: 'fixture' } })).ok()).toBe(true);
 });
+
+test('switches AI providers and retains independent models across saves and reloads', async ({ page }, testInfo) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/settings#classification');
+  const initial = await (await page.request.get('/api/settings')).json();
+  const provider = page.getByRole('combobox', { name: tr('Classification provider'), exact: true });
+  const model = page.getByRole('combobox', { name: tr('Classification model'), exact: true });
+  const save = page.locator('#classification').getByRole('button', { name: tr('Save settings'), exact: true });
+  try {
+    await selectOption(provider, 'claude');
+    await selectOption(model, 'sonnet');
+    await selectOption(provider, 'codex');
+    await expect(model).toHaveAttribute('data-value', initial.codexModel);
+    await selectOption(provider, 'claude');
+    await expect(model).toHaveAttribute('data-value', 'sonnet');
+    await save.click(); await expect(save).toBeDisabled();
+    await page.reload();
+    await expect(provider).toHaveAttribute('data-value', 'claude');
+    await expect(model).toHaveAttribute('data-value', 'sonnet');
+    await selectOption(model, '__manual_model__');
+    await page.getByLabel(tr('Model ID'), { exact: true }).fill('fixture-claude-model');
+    await save.click(); await expect(save).toBeDisabled();
+    await page.reload(); await expect(model).toHaveAttribute('data-value', 'fixture-claude-model');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('#classification').screenshot({ path: testInfo.outputPath('claude-settings-mobile.png'), animations: 'disabled' });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+    await selectOption(provider, 'codex');
+    await expect(model).toHaveAttribute('data-value', initial.codexModel);
+    await save.click(); await expect(save).toBeDisabled();
+    expect(errors).toEqual([]);
+  } finally {
+    const current = await (await page.request.get('/api/settings')).json();
+    expect((await page.request.put('/api/settings', { data: { revision: current.revision, classificationProvider: initial.classificationProvider, claudeModel: initial.claudeModel } })).ok()).toBe(true);
+  }
+});

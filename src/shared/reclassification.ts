@@ -11,7 +11,7 @@ export type ReclassificationRuleInput = z.infer<typeof reclassificationRuleInput
 export type ReclassificationRule = z.infer<typeof reclassificationRuleSchema>;
 export type ReclassificationMatch = {
   id: string; version: string; description: string; postedDate: string; accountName: string;
-  cashflowCents: number; category: Category; classificationSource: 'rules' | 'manual' | 'codex'; reason: string;
+  cashflowCents: number; category: Category; classificationSource: 'rules' | 'manual' | 'codex' | 'claude'; reason: string;
 };
 export type ReclassificationPreview = {
   id: string; rule: ReclassificationRule; status: 'scanning' | 'ready' | 'failed' | 'applied';

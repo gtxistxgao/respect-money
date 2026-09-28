@@ -70,6 +70,7 @@ export const overrideSchema = z.object({
 });
 export type TransactionOverride = z.infer<typeof overrideSchema>;
 export const classificationSchema = z.object({
+  provider: z.enum(['codex', 'claude']).optional(),
   sourceHash: z.string(), kind: kindSchema, category: categorySchema, country: countrySchema,
   countrySource: z.enum(['ai', 'default']), reason: z.string().max(1000),
   needsReview: z.boolean(), classifiedAt: z.string(), classifierVersion: z.string(),
@@ -79,7 +80,7 @@ export type LedgerRow = Omit<SourceTransaction, 'raw' | 'countrySource'> & {
   countrySource: 'bank' | 'default' | 'manual' | 'ai';
   accountName: string; accountMask: string; institution: string; version: string;
   parentId: string; splitId?: string; splitCount: number; needsReview: boolean;
-  reason: string; classificationSource: 'rules' | 'manual' | 'codex';
+  reason: string; classificationSource: 'rules' | 'manual' | 'codex' | 'claude';
   excluded: boolean; duplicateOf?: string | null;
   classifiedAt?: string; classifierVersion?: string;
 };
@@ -89,7 +90,7 @@ export const ledgerRowSchema = z.object({
   pending: z.boolean(), removed: z.boolean(), sourceHash: z.string(), kind: kindSchema, category: categorySchema, country: countrySchema,
   countrySource: z.enum(['bank', 'default', 'manual', 'ai']), notes: z.string(), accountName: z.string(), accountMask: z.string(), institution: z.string(),
   version: z.string(), parentId: z.string(), splitId: z.string().optional(), splitCount: z.number().int().nonnegative(), needsReview: z.boolean(), reason: z.string(),
-  classificationSource: z.enum(['rules', 'manual', 'codex']), excluded: z.boolean(), duplicateOf: z.string().nullable().optional(),
+  classificationSource: z.enum(['rules', 'manual', 'codex', 'claude']), excluded: z.boolean(), duplicateOf: z.string().nullable().optional(),
   classifiedAt: z.string().optional(), classifierVersion: z.string().optional(),
 });
 export const manualTransactionInput = z.object({

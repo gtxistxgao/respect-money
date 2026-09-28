@@ -1,6 +1,6 @@
 import { WealthService } from './services/wealth.js';
 import { wealthRoutes } from './routes/wealth.js';
-import { codexEnvironment } from './integrations/codex/runner.js';
+import { classificationBackend } from './integrations/ai.js';
 import { settingsRoutes } from './routes/settings.js';
 import { applicationSettingsSchema, type ModelOption } from '../shared/settings.js';
 import { localizeResponse, validationMessage, validationPath } from './localization.js';
@@ -21,8 +21,8 @@ import { Jobs } from './services/jobs.js';
 import { bankingRoutes } from './routes/banking.js';
 import { AppError } from './domain/ledger.js';
 import { ClassificationService } from './services/classification.js';
-import { classificationPrompt, codexClassifier, type ClassifyBatch } from './integrations/codex/classifier.js';
-import { codexPatternMatcher, type MatchPatterns } from './integrations/codex/pattern-matcher.js';
+import { classificationPrompt, type ClassifyBatch } from './integrations/codex/classifier.js';
+import { type MatchPatterns } from './integrations/codex/pattern-matcher.js';
 import { ReclassificationService } from './services/reclassification.js';
 import { reclassificationRoutes } from './routes/reclassification.js';
 
@@ -47,24 +47,27 @@ export async function buildApp(config: AppConfig = readConfig(), dependencies: {
   const connections = new Connections(repository, plaid, config);
   await connections.recheckConsentErrors();
   const jobs = new Jobs(repository, plaid, dependencies.polling);
-  let versionCache: { bin: string; value: string | null } | undefined;
+  let versionCache: { key: string; value: string | null } | undefined;
   const version = async () => {
-    const bin = config.codexBin;
-    if (versionCache?.bin === bin) return versionCache.value;
+    const backend = classificationBackend(config);
+    const { bin } = backend;
+    const key = `${backend.provider}/${bin}`;
+    if (versionCache?.key === key) return versionCache.value;
     let value: string | null = null;
-    try { value = (await promisify(execFile)(bin, ['--version'], { timeout: 3000, maxBuffer: 4096, env: codexEnvironment() })).stdout.trim().slice(0, 200); }
+    try { value = (await promisify(execFile)(bin, ['--version'], { timeout: 3000, maxBuffer: 4096, env: backend.environment() })).stdout.trim().slice(0, 200); }
     catch { /* Manual accounting remains available without the CLI. */ }
-    versionCache = { bin, value }; return value;
+    versionCache = { key, value }; return value;
   };
   await version();
   jobs.setPublisher(async (...args) => {
-    const fingerprint = `${await version() || 'unavailable'}/${config.codexModel || 'cli-default'}`;
+    const backend = classificationBackend(config);
+    const fingerprint = `${backend.provider}/${await version() || 'unavailable'}/${backend.model || 'cli-default'}`;
     return new ClassificationService(repository,
-      dependencies.classifyBatch || codexClassifier({ bin: config.codexBin, model: config.codexModel, timeoutMs: config.codexTimeoutMs }, config.classificationPrompt),
-      config.classificationPrompt === classificationPrompt ? fingerprint : JSON.stringify([fingerprint, config.classificationPrompt]),
+      dependencies.classifyBatch || backend.classify,
+      config.classificationPrompt === classificationPrompt ? fingerprint : JSON.stringify([fingerprint, config.classificationPrompt]), backend.provider,
     ).publish(...args);
   });
-  const reclassification = new ReclassificationService(repository, () => dependencies.matchPatterns || codexPatternMatcher({ bin: config.codexBin, model: config.codexModel, timeoutMs: config.codexTimeoutMs }));
+  const reclassification = new ReclassificationService(repository, () => dependencies.matchPatterns || classificationBackend(config).matchPatterns);
   const wealth = new WealthService(repository, plaid);
   app.addHook('onClose', async () => { await wealth.close(); await jobs.close(); await reclassification.close(); await repository.close(); });
   const runningPort = config.port;
@@ -85,7 +88,7 @@ export async function buildApp(config: AppConfig = readConfig(), dependencies: {
   app.get('/api/health', async () => ({ ok: true, name: 'Respect Money' }));
   app.get('/api/settings/status', async () => {
     const state = repository.snapshot();
-    return { plaidConfigured: Boolean(config.plaidClientId && config.plaidSecret), plaidEnv: config.plaidEnv, codexVersion: await version(),
+    return { plaidConfigured: Boolean(config.plaidClientId && config.plaidSecret), plaidEnv: config.plaidEnv, classificationProvider: config.classificationProvider ?? 'codex', cliVersion: await version(), codexVersion: (config.classificationProvider ?? 'codex') === 'codex' ? await version() : null,
       connections: Object.values(state.connections).map(({ cursor: _cursor, ...connection }) => { void _cursor; return connection; }), jobs: Object.values(state.jobs).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 20), staleAccountIds: state.staleAccountIds };
   });
   await settingsRoutes(app, repository, config, dependencies.models);

@@ -75,7 +75,7 @@ function TransactionForm({ detail, accounts, month, onClose }: { detail?: Detail
   if (!bank && !manualAccounts.length) return <div className="form-body"><p>{t("Add a manual account before entering a transaction.")}</p><button className="button secondary" onClick={onClose}>{t("Back")}</button></div>;
   return <form onSubmit={submit} className="form-body"><ErrorNotice error={error} />
     {override?.duplicateOf && <div className="notice">{t("This manual entry is linked to a bank transaction and is not counted twice.")}<button type="button" className="inline-button" onClick={() => void unmatch()}>{t("Unlink")}</button></div>}
-    {detail?.reason && <div className="classification-note"><span>{detail.classificationSource === 'codex' ? t("Codex classification rationale") : t("Items to review")}</span><p>{detail.reason}</p></div>}
+    {detail?.reason && <div className="classification-note"><span>{['codex', 'claude'].includes(detail.classificationSource ?? '') ? t("AI classification rationale") : t("Items to review")}</span><p>{detail.reason}</p></div>}
     {bank ? <div className="transaction-preview"><strong>{tx?.description}</strong><span>{date} · {money(tx?.cashflowCents || 0)}</span><p>{t("Original bank dates and amounts are preserved. Your edits will remain after synchronization.")}</p></div> : <>
       <Field label={t("Account")}><Select name="accountId" defaultValue={tx?.accountId || manualAccounts[0]?.id}>{manualAccounts.map((a) => <option value={a.id} key={a.id}>{a.name}{a.mask && ` · ${a.mask}`}</option>)}</Select></Field>
       <Field label={t("Description")}><input name="description" defaultValue={tx?.description} placeholder={t("e.g. Groceries, salary payment")} required maxLength={500} autoFocus /></Field>

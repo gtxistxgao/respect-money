@@ -16,12 +16,14 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check": "npm run typecheck && npm run lint && npm test && npm run build",
-    "codex:check": "tsx scripts/check-codex.ts",
+    "codex:check": "tsx scripts/check-classifier.ts codex",
     "backup": "tsx scripts/backup.ts",
     "migrate:sqlite": "tsx scripts/migrate-sqlite.ts",
     "restore": "tsx scripts/backup.ts restore",
     "migrate:settings": "tsx scripts/migrate-settings.ts",
-    "demo": "npm run build && tsx scripts/demo-server.ts"
+    "demo": "npm run build && tsx scripts/demo-server.ts",
+    "claude:check": "tsx scripts/check-classifier.ts claude",
+    "ai:check": "tsx scripts/check-classifier.ts"
   },
   "dependencies": {
     "@fastify/static": "10.1.3",

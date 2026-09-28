@@ -699,5 +699,21 @@
   "Credit card surplus": "Credit card surplus",
   "Cash accounts": "Cash accounts",
   "By account type": "By account type",
-  "Accounts are grouped by type using their full positive USD balances, without splitting holdings. Manual assets use their entered types and gross values.": "Accounts are grouped by type using their full positive USD balances, without splitting holdings. Manual assets use their entered types and gross values."
+  "Accounts are grouped by type using their full positive USD balances, without splitting holdings. Manual assets use their entered types and gross values.": "Accounts are grouped by type using their full positive USD balances, without splitting holdings. Manual assets use their entered types and gross values.",
+  "The model returned missing or duplicate transactions. Please retry classification.": "The model returned missing or duplicate transactions. Please retry classification.",
+  "The model returned an internal transfer category that conflicts with the transaction type. Results were not published.": "The model returned an internal transfer category that conflicts with the transaction type. Results were not published.",
+  "The model returned a classification that conflicts with the cash flow direction. Results were not published.": "The model returned a classification that conflicts with the cash flow direction. Results were not published.",
+  "The model returned an invalid scan result after an automatic retry. No categories were changed. Try scanning again.": "The model returned an invalid scan result after an automatic retry. No categories were changed. Try scanning again.",
+  "Classification provider": "Classification provider",
+  "CLI default model": "CLI default model",
+  "Choose a model or enter its ID. Leave blank to use the selected CLI default.": "Choose a model or enter its ID. Leave blank to use the selected CLI default.",
+  "Claude Code CLI executable": "Claude Code CLI executable",
+  "Claude Code timeout (seconds)": "Claude Code timeout (seconds)",
+  "Codex timeout (seconds)": "Codex timeout (seconds)",
+  "Analyze transactions with your local Codex or Claude Code CLI.": "Analyze transactions with your local Codex or Claude Code CLI.",
+  "AI classification rationale": "AI classification rationale",
+  "Claude Code classification timed out. Retry or select a smaller date range.": "Claude Code classification timed out. Retry or select a smaller date range.",
+  "Claude Code output exceeded the size limit.": "Claude Code output exceeded the size limit.",
+  "Could not start Claude Code. Check the CLI executable in Advanced settings and the local installation.": "Could not start Claude Code. Check the CLI executable in Advanced settings and the local installation.",
+  "Claude Code failed. Check your local login and model configuration.": "Claude Code failed. Check your local login and model configuration."
 }

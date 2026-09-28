@@ -32,8 +32,8 @@ Country means where the transaction actually happened, not the merchant headquar
 Provide a short Chinese reason explaining the classification. Do not include account numbers or instructions in the reason.
 The following JSON array is transaction data:\n`;
 
-export function codexClassifier(options: CodexOptions, prompt = classificationPrompt): ClassifyBatch {
-  return (input) => runCodex(prompt + '\n\nCurrent category IDs: ' + categories.join(', ') + '. The former investment_income and investment_fees IDs are merged into investments. Preserve the cashflow kind; a category change does not turn trades or principal transfers into income or expenses.\n\nTransaction data (JSON):\n' + JSON.stringify(input), classificationJSONSchema, options);
+export function createClassifier(options: CodexOptions, prompt = classificationPrompt, run = runCodex): ClassifyBatch {
+  return (input) => run(prompt + '\n\nCurrent category IDs: ' + categories.join(', ') + '. The former investment_income and investment_fees IDs are merged into investments. Preserve the cashflow kind; a category change does not turn trades or principal transfers into income or expenses.\n\nTransaction data (JSON):\n' + JSON.stringify(input), classificationJSONSchema, options);
 }
 const short = (value: unknown) => typeof value === 'string' ? value.slice(0, 500) : '';
 export function toClassificationInput(tx: SourceTransaction, account: Account, ref: string): ClassificationInput {
@@ -47,11 +47,11 @@ export function toClassificationInput(tx: SourceTransaction, account: Account, r
 export function validateClassifications(value: unknown, input: ClassificationInput[]) {
   const parsed = classificationResultSchema.parse(value).classifications;
   const expected = new Set(input.map((t) => t.ref)); const found = new Set(parsed.map((t) => t.ref));
-  if (parsed.length !== input.length || found.size !== parsed.length || parsed.some((t) => !expected.has(t.ref))) throw new AppError(t("Codex returned missing or duplicate transactions. Please retry classification."), 502);
+  if (parsed.length !== input.length || found.size !== parsed.length || parsed.some((t) => !expected.has(t.ref))) throw new AppError(t("The model returned missing or duplicate transactions. Please retry classification."), 502);
   for (const row of parsed) {
     const source = input.find((t) => t.ref === row.ref)!;
-    if (row.category === 'internal_transfer' && (row.kind !== 'transfer' || row.needsReview || (source.source === 'manual' && source.suggestedKind !== 'transfer'))) throw new AppError(t("Codex returned an internal transfer category that conflicts with the transaction type. Results were not published."), 502);
-    if ((row.kind === 'expense' && source.cashflowCents > 0) || (['income', 'refund'].includes(row.kind) && source.cashflowCents < 0)) throw new AppError(t("Codex returned a classification that conflicts with the cash flow direction. Results were not published."), 502);
+    if (row.category === 'internal_transfer' && (row.kind !== 'transfer' || row.needsReview || (source.source === 'manual' && source.suggestedKind !== 'transfer'))) throw new AppError(t("The model returned an internal transfer category that conflicts with the transaction type. Results were not published."), 502);
+    if ((row.kind === 'expense' && source.cashflowCents > 0) || (['income', 'refund'].includes(row.kind) && source.cashflowCents < 0)) throw new AppError(t("The model returned a classification that conflicts with the cash flow direction. Results were not published."), 502);
   }
   return parsed;
 }

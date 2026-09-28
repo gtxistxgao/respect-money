@@ -42,7 +42,11 @@ export function ConfigurationNotice({ config }: { config: Configuration }) {
 export function ConfigurationFields({ config, section, busy }: { config: Configuration; section: 'currency' | 'plaid' | 'classification' | 'advanced'; busy: boolean }) {
   const values = config.values;
   const [customModel, setCustomModel] = useState(false);
-  const models = useQuery({ queryKey: ['models', config.data?.codexBin], queryFn: () => api<ModelOption[]>('/settings/models'), enabled: section === 'classification' && Boolean(values), staleTime: 60000, retry: false });
+  const provider = values?.classificationProvider ?? 'codex';
+  const isClaude = provider === 'claude';
+  const modelValue = (isClaude ? values?.claudeModel : values?.codexModel) ?? '';
+  const updateModel = (model: string) => config.update(isClaude ? { claudeModel: model } : { codexModel: model });
+  const models = useQuery({ queryKey: ['models', provider, isClaude ? config.data?.claudeBin : config.data?.codexBin], queryFn: () => api<ModelOption[]>(`/settings/models?provider=${provider}`), enabled: section === 'classification' && Boolean(values), staleTime: 60000, retry: false });
   if (!values) return <p className="muted">{t('Loading settings…')}</p>;
   return <fieldset className="configuration-fields" disabled={config.saving}>
     {section === 'currency' && <div className="configuration-grid"><label>{t('CNY per 1 USD')}<input type="number" inputMode="decimal" min="0.0001" max="1000" step="any" value={values.usdCnyRate === 0 ? '' : values.usdCnyRate ?? defaultUsdCnyRate} onChange={(event) => config.update({ usdCnyRate: event.target.value === '' ? 0 : Number(event.target.value) })} /></label><p className="muted small">{t('Used for approximate CNY values on asset cards. USD amounts remain unchanged.')}</p></div>}
@@ -55,17 +59,18 @@ export function ConfigurationFields({ config, section, busy }: { config: Configu
     {values.hasPlaidSecret && <label className="configuration-checkbox"><input type="checkbox" checked={Boolean(config.draft?.patch.clearPlaidSecret)} onChange={(event) => config.update({ clearPlaidSecret: event.target.checked, plaidSecret: '' })} />{t('Remove the saved Plaid secret')}</label>}
     <p className="muted small">{t('Use the environment matching your keys. Existing bank connections are tied to their environment and client ID.')}</p></>}
     {section === 'classification' && <>
-      <label>{t('Classification model')}<Select value={customModel ? '__manual_model__' : values.codexModel} onValueChange={(nextValue) => {
+      <label>{t('Classification provider')}<Select value={provider} onValueChange={(value) => { config.update({ classificationProvider: value as 'codex' | 'claude' }); setCustomModel(false); }}><option value="codex">Codex</option><option value="claude">Claude Code</option></Select></label>
+      <label>{t('Classification model')}<Select value={customModel ? '__manual_model__' : modelValue} onValueChange={(nextValue) => {
         const manual = nextValue === '__manual_model__'; setCustomModel(manual);
-        if (!manual) config.update({ codexModel: nextValue });
+        if (!manual) updateModel(nextValue);
       }}>
-        <option value="">{t('Codex default model')}</option>
+        <option value="">{t('CLI default model')}</option>
         {models.data?.map((model) => <option key={model.model} value={model.model}>{model.displayName}{model.isDefault ? ` (${t('Default')})` : ''}</option>)}
-        {values.codexModel && !models.data?.some((model) => model.model === values.codexModel) && <option value={values.codexModel}>{values.codexModel}</option>}
+        {modelValue && !models.data?.some((model) => model.model === modelValue) && <option value={modelValue}>{modelValue}</option>}
         <option value="__manual_model__">{t('Enter a model ID…')}</option>
       </Select></label>
-      {customModel && <label className="custom-model-field">{t('Model ID')}<input value={values.codexModel} placeholder={t('Codex default model')} onChange={(event) => config.update({ codexModel: event.target.value })} /></label>}
-      <div className="configuration-help"><p className="muted small">{t('Choose an available model or enter its ID. Leave blank to use the Codex default.')}</p><button className="button secondary small" disabled={models.isFetching} onClick={() => void models.refetch()}>{models.isFetching ? t('Loading models…') : t('Refresh models')}</button></div>
+      {customModel && <label className="custom-model-field">{t('Model ID')}<input value={modelValue} placeholder={t('CLI default model')} onChange={(event) => updateModel(event.target.value)} /></label>}
+      <div className="configuration-help"><p className="muted small">{t('Choose a model or enter its ID. Leave blank to use the selected CLI default.')}</p><button className="button secondary small" disabled={models.isFetching} onClick={() => void models.refetch()}>{models.isFetching ? t('Loading models…') : t('Refresh models')}</button></div>
       <ErrorNotice error={models.error} />
       <div className="configuration-prompt-heading"><label htmlFor="classification-prompt">{t('Transaction classification prompt')}</label><button className="button secondary small" onClick={() => config.update({ classificationPrompt: values.defaultPrompt })}>{t('Restore default prompt')}</button></div>
       <textarea id="classification-prompt" className="classification-prompt" rows={18} spellCheck={false} value={values.classificationPrompt} onChange={(event) => config.update({ classificationPrompt: event.target.value })} />
@@ -73,7 +78,9 @@ export function ConfigurationFields({ config, section, busy }: { config: Configu
     </>}
     {section === 'advanced' && <div className="configuration-grid">
       <label>{t('Codex CLI executable')}<input value={values.codexBin} onChange={(event) => config.update({ codexBin: event.target.value })} /></label>
-      <label>{t('Classification timeout (seconds)')}<input type="number" min="1" max="600" value={values.codexTimeoutMs / 1000} onChange={(event) => config.update({ codexTimeoutMs: Number(event.target.value) * 1000 })} /></label>
+      <label>{t('Codex timeout (seconds)')}<input type="number" min="1" max="600" value={values.codexTimeoutMs / 1000} onChange={(event) => config.update({ codexTimeoutMs: Number(event.target.value) * 1000 })} /></label>
+      <label>{t('Claude Code CLI executable')}<input value={values.claudeBin ?? 'claude'} onChange={(event) => config.update({ claudeBin: event.target.value })} /></label>
+      <label>{t('Claude Code timeout (seconds)')}<input type="number" min="1" max="600" value={(values.claudeTimeoutMs ?? 120000) / 1000} onChange={(event) => config.update({ claudeTimeoutMs: Number(event.target.value) * 1000 })} /></label>
       <label>{t('Server port')}<input type="number" min="1" max="65535" value={values.port} onChange={(event) => config.update({ port: Number(event.target.value) })} /><small className="muted">{t('Changing the port requires an application restart.')}</small></label>
     </div>}
     <div className="configuration-actions"><button className="button primary" disabled={!config.draft || config.saving || busy} onClick={() => void config.save()}>{config.saving ? t('Saving…') : t('Save settings')}</button>

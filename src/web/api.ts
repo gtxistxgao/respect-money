@@ -19,7 +19,7 @@ export function money(cents: number, currency = 'USD') {
 }
 export async function refreshData() { await queryClient.invalidateQueries(); }
 export type SettingsStatus = {
-  plaidConfigured: boolean; plaidEnv: string; codexVersion: string | null;
+  plaidConfigured: boolean; plaidEnv: string; classificationProvider: 'codex' | 'claude'; cliVersion: string | null; codexVersion: string | null;
   connections: { id: string; institution: string; institutionId?: string; products: string[]; status: string; lastSyncedAt?: string; lastError?: string }[];
   jobs: { id: string; type: string; status: string; message: string; progress: number; total: number; errors: string[]; createdAt: string }[];
   staleAccountIds: string[];

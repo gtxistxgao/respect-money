@@ -14,12 +14,12 @@ Connect your accounts, sync your transactions, and let AI handle the first pass 
 
 ## Why Respect Money?
 
-- **Free software, no app subscription.** Run the app on your own computer. Bring your own Plaid and Codex access; their eligibility, usage limits, and any service charges are separate.
+- **Free software, no app subscription.** Run the app on your own computer. Bring your own Plaid and AI provider access; their eligibility, usage limits, and any service charges are separate.
 - **Your ledger stays on your machine.** The web app and backend run locally. Transactions, categories, notes, settings, and wealth history live in your SQLite database, with backups you control. There is no Respect Money cloud storing your ledger.
-- **AI sorting, with you in control.** Codex helps classify transaction categories and infer countries from the available clues. If it gets a recurring payment wrong, give it an example, preview similar transactions, and apply your correction together. Work through thousands of eligible records in batches instead of editing them one by one. Saved rules run when you explicitly scan; they do not silently change future transactions.
+- **AI sorting, with you in control.** Codex or Claude Code helps classify transaction categories and infer countries from the available clues. If it gets a recurring payment wrong, give it an example, preview similar transactions, and apply your correction together. Work through thousands of eligible records in batches instead of editing them one by one. Saved rules run when you explicitly scan; they do not silently change future transactions.
 - **A practical free bank-sync option.** Eligible Plaid Trial accounts can create up to **10 Production Items** for real bank connections—room for a personal setup with checking, savings, credit cards, and investments, depending on your logins and institution support. See the [Plaid Trial details](https://support.plaid.com/hc/en-us/articles/39994173227159-What-is-the-Plaid-Trial-plan).
 
-**Local app, clear data boundaries:** Plaid connects to your banks. When you enable AI classification or a reclassification scan, selected transaction details and any supplied rule examples are sent through your local Codex CLI to its model service. AI processing is not fully offline. Use manual bookkeeping without either integration if you want to keep those records entirely local. See [Security and privacy](SECURITY.md).
+**Local app, clear data boundaries:** Plaid connects to your banks. When you enable AI classification or a reclassification scan, selected transaction details and any supplied rule examples are sent through your selected local Codex or Claude Code CLI to its model service. AI processing is not fully offline. Use manual bookkeeping without either integration if you want to keep those records entirely local. See [Security and privacy](SECURITY.md).
 
 The interface supports **English and Simplified Chinese**. Accounting focuses on posted USD transactions; Wealth combines USD account balances and manual assets. The app is designed for one local user.
 
@@ -65,13 +65,13 @@ Detach with `Ctrl+B`, then `D`; stop the app with `Ctrl+C` while attached. `tmux
 
 For development with live reload, use `npm run dev` instead and open [http://127.0.0.1:5173](http://127.0.0.1:5173). Both modes listen on loopback; this is not a public hosting setup.
 
-### 3. Configure Plaid and Codex in Settings
+### 3. Configure Plaid and AI classification in Settings
 
 Open **Settings → Language** to select English if needed; a new browser defaults to Simplified Chinese. Your choice persists in that browser and synchronizes between tabs.
 
 In **Settings → Bank connections**, enter your **Plaid client ID** and **secret** and select the matching environment. Choose **Production** for real accounts, including the Trial plan; Sandbox uses fictional test accounts. Save your settings. The app stores them in your local database, so you do not need an `.env` file.
 
-For AI features, install and sign in to the **Codex CLI** on the same computer. Follow the [official Codex CLI setup](https://learn.chatgpt.com/docs/codex/cli); you can install it with npm and sign in from your terminal:
+For AI features, install and sign in to **Codex CLI** or **Claude Code** on the same computer. For Codex, follow the [official Codex CLI setup](https://learn.chatgpt.com/docs/codex/cli); you can install it with npm and sign in from your terminal:
 
 ```sh
 npm install -g @openai/codex
@@ -79,9 +79,18 @@ codex login
 codex --version
 ```
 
-Then open **Settings → Automatic classification**, select an available model, and save. You can edit the classification prompt, choose a model ID manually, or leave it blank for the CLI default. If the executable is not found, set its path under **Advanced settings**. Your Codex account's model access and usage limits apply.
+Alternatively, install a current **Claude Code** using the [official setup instructions](https://code.claude.com/docs/en/setup), then sign in:
 
-The current release requires a working, signed-in Codex CLI for AI classification and reclassification. **On the roadmap:** test open-source models, including local inference, with the aim of reducing that dependency and making fully local classification possible. This is planned work, not a feature of the current release.
+```sh
+claude auth login
+claude --version
+```
+
+Claude Code must support `--safe-mode`, `--json-schema`, and `--no-session-persistence` (CLI flags checked with 2.1.222). The integration uses [headless print mode](https://code.claude.com/docs/en/headless), retains subscription login, and also permits `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` from the server environment. It does not load user/project settings or custom authentication helpers.
+
+Then open **Settings → Automatic classification**, choose **Codex** or **Claude Code**, select a model, and save. You can edit the classification prompt, choose a model ID manually, or leave it blank for the CLI default. If the executable is not found, set its path under **Advanced settings**. Each provider retains its own executable, model, and timeout settings. Your selected provider's model access and usage limits apply. Existing installations default to Codex; switching providers affects future tasks and preserves historical results until you explicitly reclassify them.
+
+The current release requires a working, authenticated Codex or Claude Code CLI for AI classification and reclassification. **On the roadmap:** test open-source models, including local inference, with the aim of reducing that dependency and making fully local classification possible. This is planned work, not a feature of the current release.
 
 ### 4. Connect your bank accounts
 
@@ -93,7 +102,7 @@ Use **Manage accounts** on an existing connection to add accounts or update cons
 
 Open **Accounting → Sync bank data**. Choose a month, year, or custom date range and start synchronization. The first connection also starts an initial sync from **2026-01-01 through today**; you can request earlier history afterward if the provider has it.
 
-The backend fetches the available bank and investment transactions from Plaid, then uses Codex to classify new or uncached transactions and suggest the country where each transaction took place. Countries without reliable evidence default to US and can be corrected. Progress is visible in the app; closing the browser does not stop a running job while the backend stays up.
+The backend fetches the available bank and investment transactions from Plaid, then uses the selected AI provider to classify new or uncached transactions and suggest the country where each transaction took place. Countries without reliable evidence default to US and can be corrected. Progress is visible in the app; closing the browser does not stop a running job while the backend stays up.
 
 Sync is initiated by you; this is not an always-on scheduled bank poller. Normal sync reads what Plaid currently has. The optional bank-refresh setting requests a newer upstream update where supported. Available history and freshness depend on the provider.
 
@@ -154,10 +163,12 @@ In Accounting, **Sync bank data** accepts a month, year, or custom date range. D
 
 Normal synchronization reads data already available from Plaid. The optional bank-refresh setting requests an upstream update and reports waiting or failure. New Transactions connections request 730 days of history, while the initially enabled ledger starts in 2026. Enabled ranges are merged: a narrower sync does not remove existing months. **Settings → Historical coverage** distinguishes enabled ranges, observed transaction dates, and provider status; observed dates do not prove that earlier months had no activity. Investment history is also limited by the provider; existing older local records are retained.
 
-Automatic classification requires an installed, signed-in Codex CLI. In **Automatic classification**, choose a model and edit the full prompt. In **Advanced settings**, configure the executable and timeout. A blank model uses the CLI default; the model picker queries the installed CLI's model catalog. The app does not modify global Codex configuration.
+Automatic classification requires an installed, authenticated Codex or Claude Code CLI. In **Automatic classification**, choose the provider and model and edit the shared prompt. In **Advanced settings**, configure each CLI's executable and timeout. A blank model uses the CLI default. Codex models come from its CLI catalog; Claude offers the `sonnet`, `opus`, and `haiku` aliases plus a custom model ID, subject to account access. The app does not modify global CLI configuration.
 
 ```sh
-npm run codex:check
+npm run ai:check       # Currently selected provider
+npm run codex:check    # Explicit Codex check
+npm run claude:check   # Explicit Claude Code check
 ```
 
 This optional check sends one fictional Tokyo cafe transaction through the configured classifier. It requires network access and a working CLI login. Automated unit and browser tests use fixtures instead.
@@ -219,7 +230,7 @@ Browser tests cover built and development modes, desktop and mobile layouts, set
 | Plaid is not configured | Save matching credentials and environment in Settings |
 | Bank requests login | Reauthorize the existing connection |
 | History is still preparing | Retry later; existing records are retained |
-| Codex fails or times out | Check CLI installation, login, model, and network; retry or use bank rules |
+| AI classification fails or times out | Check CLI installation, login, model, and network; retry or use bank rules |
 | An edit is rejected as stale | Refresh and reopen the editor |
 | The data directory is already in use | Stop the other backend; never remove its live writer lock |
 | Database cannot be opened | Follow [damaged-database recovery](docs/SQLITE_STORAGE.md#damaged-database-recovery) |
