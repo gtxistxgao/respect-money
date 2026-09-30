@@ -3,6 +3,7 @@ import type { Account, LedgerRow } from '../src/shared/models.js';
 import type { RepositoryState } from '../src/server/storage/repository.js';
 import { createLedger, summarize } from '../src/server/domain/ledger.js';
 import { monthSummary, overview } from '../src/server/domain/overview.js';
+import { overviewPeriod } from '../src/web/features/overview/period.js';
 
 const account: Account = { id: 'card', name: 'Fictional card', institution: 'Test', mask: '1234', type: 'credit', source: 'manual', enabled: true, createdAt: '2025-01-01' };
 const baseRow = createLedger([{ accountId: account.id, source: 'manual', payload: { id: 'purchase', postedDate: '2026-02-03', description: 'Fictional purchase', cashflowCents: -10000, kind: 'expense', category: 'dining', country: 'US' } }], [account], {}, {}, {})[0];
@@ -53,5 +54,33 @@ describe('monthly overview', () => {
   it('rejects gross totals that exceed safe integer precision even when refunds cancel them', () => {
     const value = state([row({ cashflowCents: -Number.MAX_SAFE_INTEGER }), row({ kind: 'refund', cashflowCents: Number.MAX_SAFE_INTEGER }), row({ cashflowCents: -100 })]);
     expect(() => overview(value)).toThrow("The category total exceeds the supported range");
+  });
+  it('totals the displayed twelve months, selected year, or full history with refunds deducted once', () => {
+    const rows = ['2024-12', '2025-01', '2025-12', '2026-01'].flatMap((month, index) => [
+      row({ postedDate: `${month}-01`, kind: 'income', cashflowCents: (index + 1) * 100000 }),
+      row({ postedDate: `${month}-02`, cashflowCents: -(index + 1) * 10000 }),
+    ]);
+    rows.push(row({ postedDate: '2025-12-03', kind: 'refund', cashflowCents: 5000 }), row({ postedDate: '2026-01-03', kind: 'refund', cashflowCents: 2500 }));
+    const months = overview(state(rows)).months;
+    const recent = overviewPeriod(months, '12');
+    expect(recent.months).toHaveLength(12);
+    expect(recent.months[0].month).toBe('2025-02');
+    expect(recent).toMatchObject({ incomeCents: 700000, expenseCents: 62500 });
+    expect(overviewPeriod(months, '2025')).toMatchObject({ incomeCents: 500000, expenseCents: 45000 });
+    expect(overviewPeriod(months, '2024')).toMatchObject({ incomeCents: 100000, expenseCents: 10000 });
+    expect(overviewPeriod(months, 'all')).toMatchObject({ incomeCents: 1000000, expenseCents: 92500 });
+    expect(overviewPeriod(months, 'unknown')).toEqual(recent);
+  });
+  it('keeps period totals scoped to included accounts and categories and preserves net refunds', () => {
+    const value = state([
+      row({ kind: 'refund', cashflowCents: 5000 }),
+      row({ kind: 'income', cashflowCents: 10000 }),
+      row({ excluded: true }), row({ categoryExcluded: true }), row({ needsReview: true }), row({ currency: 'CAD' }),
+      row({ accountId: 'second', kind: 'income', cashflowCents: 25000 }),
+      row({ accountId: 'disabled', kind: 'income', cashflowCents: 50000 }),
+    ], [account, { ...account, id: 'second' }, { ...account, id: 'disabled', enabled: false }]);
+    expect(overviewPeriod(overview(value).months, 'all')).toMatchObject({ incomeCents: 35000, expenseCents: -5000 });
+    expect(overviewPeriod(overview(value, 'card').months, '12')).toMatchObject({ incomeCents: 10000, expenseCents: -5000 });
+    expect(overviewPeriod(overview(value, 'disabled').months, 'all')).toEqual({ months: [], incomeCents: 0, expenseCents: 0 });
   });
 });

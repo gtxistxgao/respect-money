@@ -3,6 +3,43 @@ import { translate, shortMonth } from '../../src/i18n/index.js';
 const tr = (key: string, params?: Record<string, string | number>) => translate('zh', key, params);
 import { expect, test } from '@playwright/test';
 
+test('updates period income and net spending totals with range and account filters', async ({ page, request }) => {
+  const account = await (await request.post('/api/accounts/manual', { data: { name: 'Period totals fixture', institution: 'Test', type: 'cash' } })).json();
+  const second = await (await request.post('/api/accounts/manual', { data: { name: 'Other period fixture', institution: 'Test', type: 'cash' } })).json();
+  const add = async (accountId: string, month: string, kind: string, amount: string) => {
+    expect((await request.post('/api/transactions/manual', { data: { accountId, postedDate: `${month}-05`, description: `Period ${kind} ${month}`, kind, amount, category: 'side_business' } })).ok()).toBe(true);
+  };
+  for (const [index, month] of ['2024-12', '2025-01', '2025-12', '2026-01'].entries()) {
+    await add(account.id, month, 'income', String((index + 1) * 1000));
+    await add(account.id, month, 'expense', String((index + 1) * 100));
+  }
+  await add(account.id, '2025-12', 'refund', '50');
+  await add(account.id, '2026-01', 'refund', '25');
+  await add(second.id, '2025-06', 'income', '99');
+  await page.goto(`/overview?accounts=${account.id}&month=2026-01`);
+  const totals = page.locator('.period-totals');
+  const expectTotals = async (income: string, expense: string) => {
+    await expect(totals.locator('div').filter({ has: page.getByText(tr('Total income'), { exact: true }) })).toContainText(income);
+    await expect(totals.locator('div').filter({ has: page.getByText(tr('Total spending'), { exact: true }) })).toContainText(expense);
+  };
+  await expectTotals('$7,000.00', '$625.00');
+  await selectOption(page.getByLabel(tr('Trend range')), '2025');
+  await expectTotals('$5,000.00', '$450.00');
+  await selectOption(page.getByLabel(tr('View month'), { exact: true }), '2025-01');
+  await expectTotals('$5,000.00', '$450.00');
+  await page.reload();
+  await expectTotals('$5,000.00', '$450.00');
+  await selectOption(page.getByLabel(tr('Trend range')), 'all');
+  await expectTotals('$10,000.00', '$925.00');
+  await selectOption(page.getByLabel(tr('Trend range')), '12');
+  await expectTotals('$7,000.00', '$625.00');
+  await page.setViewportSize({ width: 320, height: 740 });
+  await expect(totals).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await selectOption(page.getByLabel(tr('Filter overview accounts')), second.id);
+  await expectTotals('$99.00', '$0.00');
+});
+
 test('compares monthly cash flow, selects categories and handles zero income on mobile', async ({ page, request }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));

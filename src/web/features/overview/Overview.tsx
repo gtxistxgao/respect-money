@@ -8,6 +8,7 @@ import { api, money } from '../../api.js';
 import { ErrorNotice, Loading } from '../../components.js';
 import { CategoryBreakdown, monthLabel, percentage } from './CategoryBreakdown.js';
 import { MonthlyChart } from './MonthlyChart.js';
+import { overviewPeriod } from './period.js';
 
 export function Overview() {
   const [params, setParams] = useSearchParams();
@@ -17,7 +18,8 @@ export function Overview() {
   const result = useQuery({ queryKey: ['overview', accountFilter], queryFn: () => api<OverviewData>(`/accounting/overview?${new URLSearchParams({ accounts: accountFilter })}`), refetchInterval: 5000 });
   const allMonths = result.data?.months || [];
   const years = [...new Set(allMonths.map((month) => month.month.slice(0, 4)))].reverse();
-  const months = period === 'all' ? allMonths : years.includes(period) ? allMonths.filter((month) => month.month.startsWith(period)) : allMonths.slice(-12);
+  const periodSummary = overviewPeriod(allMonths, period);
+  const { months } = periodSummary;
   const requestedMonth = params.get('month') || today().slice(0, 7);
   const recordedSelection = allMonths.find((month) => month.month === requestedMonth);
   const summary = useQuery({ queryKey: ['summary', requestedMonth, accountFilter], queryFn: () => api<MonthSummary>(`/accounting/summary?${new URLSearchParams({ month: requestedMonth, ...(accountFilter ? { accounts: accountFilter } : {}) })}`), enabled: result.isSuccess && !recordedSelection });
@@ -29,7 +31,7 @@ export function Overview() {
       const next = new URLSearchParams(previous);
       if (value) next.set(key, value); else next.delete(key);
       if (key === 'period') {
-        const range = value === 'all' ? allMonths : years.includes(value) ? allMonths.filter((month) => month.month.startsWith(value)) : allMonths.slice(-12);
+        const range = overviewPeriod(allMonths, value).months;
         if (!range.some((month) => month.month === requestedMonth) && range.length) next.set('month', range.at(-1)!.month);
       }
       return next;
@@ -43,6 +45,10 @@ export function Overview() {
       {months.some((month) => month.stale) && <div className="notice">{t("Classification is out of date. Charts show the last successfully published ledger.")}</div>}
       <section className="trend-panel" aria-label={t("Income and spending trends")}>
         <div className="chart-heading"><div><h2>{t("Income and spending trends")}</h2><p>{monthLabel(months[0].month)} — {monthLabel(months.at(-1)!.month)}</p></div><Select aria-label={t("Trend range")} value={years.includes(period) || period === 'all' ? period : '12'} onValueChange={(nextValue) => change('period', nextValue)}><option value="12">{t("Last 12 months")}</option><option value="all">{t("All months")}</option>{years.map((year) => <option key={year} value={year}>{t("year.label", { year })}</option>)}</Select></div>
+        <dl className="period-totals" aria-label={t("Selected period totals")}>
+          <div><dt><i className="income-key" />{t("Total income")}</dt><dd className="income-text">{money(periodSummary.incomeCents)}</dd></div>
+          <div><dt><i className="expense-key" />{t("Total spending")}</dt><dd>{money(periodSummary.expenseCents)}<small>{t("Net of received refunds")}</small></dd></div>
+        </dl>
         <div className="chart-legend"><span><i className="income-key" />{t("Income")}</span><span><i className="expense-key" />{t("Net spending")}</span><span className="chart-unit">{t("USD · Same amount scale")}</span></div>
         <MonthlyChart months={months} selected={selected.month} onSelect={(month) => change('month', month)} />
       </section>
