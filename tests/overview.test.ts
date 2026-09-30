@@ -3,7 +3,8 @@ import type { Account, LedgerRow } from '../src/shared/models.js';
 import type { RepositoryState } from '../src/server/storage/repository.js';
 import { createLedger, summarize } from '../src/server/domain/ledger.js';
 import { monthSummary, overview } from '../src/server/domain/overview.js';
-import { overviewPeriod } from '../src/web/features/overview/period.js';
+import { categoryMonthlySpending, overviewPeriod } from '../src/web/features/overview/period.js';
+import { netCategoryShares } from '../src/web/features/overview/category-shares.js';
 
 const account: Account = { id: 'card', name: 'Fictional card', institution: 'Test', mask: '1234', type: 'credit', source: 'manual', enabled: true, createdAt: '2025-01-01' };
 const baseRow = createLedger([{ accountId: account.id, source: 'manual', payload: { id: 'purchase', postedDate: '2026-02-03', description: 'Fictional purchase', cashflowCents: -10000, kind: 'expense', category: 'dining', country: 'US' } }], [account], {}, {}, {})[0];
@@ -81,6 +82,50 @@ describe('monthly overview', () => {
     ], [account, { ...account, id: 'second' }, { ...account, id: 'disabled', enabled: false }]);
     expect(overviewPeriod(overview(value).months, 'all')).toMatchObject({ incomeCents: 35000, expenseCents: -5000 });
     expect(overviewPeriod(overview(value, 'card').months, '12')).toMatchObject({ incomeCents: 10000, expenseCents: -5000 });
-    expect(overviewPeriod(overview(value, 'disabled').months, 'all')).toEqual({ months: [], incomeCents: 0, expenseCents: 0 });
+    expect(overviewPeriod(overview(value, 'disabled').months, 'all')).toEqual({ months: [], categories: [], incomeCents: 0, expenseCents: 0 });
+  });
+  it('aggregates category amounts across the selected months before calculating shares', () => {
+    const value = state([
+      row({ postedDate: '2024-01-01', category: 'shopping', cashflowCents: -999999 }),
+      row({ postedDate: '2025-12-01', category: 'travel', cashflowCents: -10000 }),
+      row({ postedDate: '2025-12-02', category: 'custom_studio', cashflowCents: -10000 }),
+      row({ postedDate: '2026-01-01', category: 'travel', cashflowCents: -20000 }),
+      row({ postedDate: '2026-01-02', category: 'custom_studio', cashflowCents: -10000 }),
+      row({ postedDate: '2026-01-03', category: 'travel', kind: 'refund', cashflowCents: 15000 }),
+      row({ postedDate: '2026-01-04', category: 'salary', kind: 'income', cashflowCents: 50000 }),
+      row({ postedDate: '2026-01-05', category: 'shopping', categoryExcluded: true, cashflowCents: -999999 }),
+    ]);
+    const months = overview(value).months;
+    const period = overviewPeriod(months, '12');
+    expect(period.categories).toEqual([
+      { category: 'custom_studio', expenseCents: 20000, refundCents: 0 },
+      { category: 'travel', expenseCents: 30000, refundCents: 15000 },
+    ]);
+    expect(netCategoryShares(period.categories)).toMatchObject([
+      { category: 'custom_studio', netExpenseCents: 20000, share: 4 / 7 },
+      { category: 'travel', netExpenseCents: 15000, share: 3 / 7 },
+    ]);
+    expect(period.categories.reduce((sum, item) => sum + item.expenseCents - item.refundCents, 0)).toBe(period.expenseCents);
+    const distribution = categoryMonthlySpending(period.months, 'travel');
+    expect(distribution).toHaveLength(12);
+    expect(distribution.slice(0, 10).every(item => item.netExpenseCents === 0)).toBe(true);
+    expect(distribution.slice(-2)).toEqual([{ month: '2025-12', netExpenseCents: 10000 }, { month: '2026-01', netExpenseCents: 5000 }]);
+    expect(distribution.reduce((sum, item) => sum + item.netExpenseCents, 0)).toBe(15000);
+    expect(netCategoryShares(overviewPeriod(months, '2025').categories)).toMatchObject([
+      { category: 'custom_studio', netExpenseCents: 10000, share: .5 },
+      { category: 'travel', netExpenseCents: 10000, share: .5 },
+    ]);
+  });
+  it('keeps refunds and empty months visible in the tooltip distribution', () => {
+    const months = overview(state([
+      row({ postedDate: '2025-12-01', category: 'travel', cashflowCents: -10000 }),
+      row({ postedDate: '2026-02-01', category: 'travel', kind: 'refund', cashflowCents: 15000 }),
+    ])).months;
+    expect(categoryMonthlySpending(months, 'travel')).toEqual([
+      { month: '2025-12', netExpenseCents: 10000 },
+      { month: '2026-01', netExpenseCents: 0 },
+      { month: '2026-02', netExpenseCents: -15000 },
+    ]);
+    expect(categoryMonthlySpending([], 'travel')).toEqual([]);
   });
 });

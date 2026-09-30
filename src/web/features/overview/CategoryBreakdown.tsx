@@ -2,17 +2,13 @@ import { useCategories } from '../../categories.js';
 import { t, intlLocale, formatMonth } from "../../../i18n/index.js";
 import { useId, type CSSProperties } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { type Category, type MonthSummary } from '../../../shared/models.js';
+import { type MonthSummary } from '../../../shared/models.js';
 import { money } from '../../api.js';
 import { CategoryIcon } from '../../CategoryIcon.js';
 import { resetTableFilters } from '../accounting/filters.js';
+import { categoryColor } from './category-colors.js';
 import { netCategoryShares } from './category-shares.js';
 
-const colors: Record<Category, string> = {
-  dining: 'var(--orange)', groceries: 'var(--accent)', housing: 'var(--pink)', transport: 'var(--cyan)',
-  shopping: 'var(--chart-shopping, #c4adfa)', health: 'var(--danger)', childcare: 'var(--childcare)', entertainment: 'var(--chart-entertainment, #73cabe)', travel: 'var(--chart-travel, #56c6f6)',
-  side_business: 'var(--chart-business, #8bb8f0)', salary: 'var(--chart-salary, #6fc666)', investments: 'var(--chart-investments, #88d6b0)', interest: 'var(--chart-interest, #b5e6fb)', dividends: 'var(--chart-dividends, #e27dd7)', investment_transaction: 'var(--chart-activity, #92929f)', internal_transfer: 'var(--chart-activity, #92929f)', uncategorized: 'var(--chart-uncategorized, #acacb9)',
-};
 export const percentage = (ratio: number) => new Intl.NumberFormat(intlLocale(), { style: 'percent', maximumFractionDigits: 1 }).format(ratio);
 export const monthLabel = formatMonth;
 
@@ -34,7 +30,7 @@ export function CategoryBreakdown({ data, accounts = '' }: { data: MonthSummary;
       query.set('month', data.month);
       if (!selected) query.set('categories', item.category);
       if (accounts) query.set('accounts', accounts);
-      return <li key={item.category}><Link to={`/?${query}`} className={selected ? 'selected' : undefined} title={item.refundCents > 0 ? t('Refunds deducted: {amount}', { amount: money(item.refundCents) }) : undefined} aria-current={selected ? 'true' : undefined} style={{ '--category-color': colors[item.category] ?? 'var(--cyan)' } as CSSProperties}>
+      return <li key={item.category}><Link to={`/?${query}`} className={selected ? 'selected' : undefined} title={item.refundCents > 0 ? t('Refunds deducted: {amount}', { amount: money(item.refundCents) }) : undefined} aria-current={selected ? 'true' : undefined} style={{ '--category-color': categoryColor(item.category) } as CSSProperties}>
         <CategoryIcon className="category-icon" category={item.category} size={36} />
         <span className="category-item-content">
           <span className="category-item-heading"><span className="category-name" title={categoryLabel(item.category)}>{categoryLabel(item.category)}</span><span className="category-amount">{money(item.netExpenseCents)}</span><strong className="category-percentage">{item.netExpenseCents < 0 ? t('Net refund') : percentage(share)}</strong></span>

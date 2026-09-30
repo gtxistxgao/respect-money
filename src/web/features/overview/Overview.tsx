@@ -9,6 +9,7 @@ import { ErrorNotice, Loading } from '../../components.js';
 import { CategoryBreakdown, monthLabel, percentage } from './CategoryBreakdown.js';
 import { MonthlyChart } from './MonthlyChart.js';
 import { overviewPeriod } from './period.js';
+import { PeriodBreakdown } from './PeriodBreakdown.js';
 
 export function Overview() {
   const [params, setParams] = useSearchParams();
@@ -43,6 +44,7 @@ export function Overview() {
     <ErrorNotice error={result.error || accounts.error || summary.error} />
     {result.isPending ? <Loading label={t("Summarizing monthly cash flow…")} /> : result.data && !allMonths.length ? <section className="overview-empty"><BarChart3 size={36} /><h2>{t("Start a trend with your first record")}</h2><p>{t("No transactions have been received for these accounts. Connect a bank or add a manual entry to see monthly cash flow.")}</p><Link className="button primary" to="/">{t("Go to ledger")} <ArrowRight size={16} /></Link></section> : selected && <>
       {months.some((month) => month.stale) && <div className="notice">{t("Classification is out of date. Charts show the last successfully published ledger.")}</div>}
+      <div className="overview-period-grid">
       <section className="trend-panel" aria-label={t("Income and spending trends")}>
         <div className="chart-heading"><div><h2>{t("Income and spending trends")}</h2><p>{monthLabel(months[0].month)} — {monthLabel(months.at(-1)!.month)}</p></div><Select aria-label={t("Trend range")} value={years.includes(period) || period === 'all' ? period : '12'} onValueChange={(nextValue) => change('period', nextValue)}><option value="12">{t("Last 12 months")}</option><option value="all">{t("All months")}</option>{years.map((year) => <option key={year} value={year}>{t("year.label", { year })}</option>)}</Select></div>
         <dl className="period-totals" aria-label={t("Selected period totals")}>
@@ -52,6 +54,8 @@ export function Overview() {
         <div className="chart-legend"><span><i className="income-key" />{t("Income")}</span><span><i className="expense-key" />{t("Net spending")}</span><span className="chart-unit">{t("USD · Same amount scale")}</span></div>
         <MonthlyChart months={months} selected={selected.month} onSelect={(month) => change('month', month)} />
       </section>
+      <PeriodBreakdown summary={periodSummary} />
+      </div>
       <div className="overview-month-heading"><div className="month-stepper"><button className="icon-button" aria-label={t("View previous month")} disabled={selectedIndex <= 0} onClick={() => change('month', selectionMonths[selectedIndex - 1].month)}><ChevronLeft size={18} /></button><Select aria-label={t("View month")} value={selected.month} onValueChange={(nextValue) => change('month', nextValue)}>{selectionMonths.map((month) => <option key={month.month} value={month.month}>{monthLabel(month.month)}</option>)}</Select><button className="icon-button" aria-label={t("View next month")} disabled={selectedIndex >= selectionMonths.length - 1} onClick={() => change('month', selectionMonths[selectedIndex + 1].month)}><ChevronRight size={18} /></button></div><Link className="month-detail-link" to={`/?${detailQuery}`}>{t("View monthly ledger")} <ArrowRight size={15} /></Link></div>
       {selected.incompleteAccounts.length > 0 && <div className="notice">{t("Incomplete synchronization: {accounts}. Only received records are included.", { accounts: selected.incompleteAccounts.join(t("list.separator")) })}</div>}
       {selected.reviewCount > 0 && <div className="notice">{t("{count} transactions need review. Uncategorized income and spending remain in totals; uncertain cash flows are excluded.", { count: selected.reviewCount })}<Link className="inline-button" to={`/?${detailQuery}&mode=review`}>{t("Review now")}</Link></div>}
