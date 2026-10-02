@@ -59,8 +59,8 @@ test('sorts the account column, selects multiple accounts and preserves filters 
   await expect(page.locator('tbody .ledger-col-account').first()).toContainText('Zulu filter card');
   await header.getByRole('button', { name: tr('Filter transaction accounts'), exact: true }).click();
   const menu = page.locator('.filter-popover:visible');
-  await menu.getByRole('checkbox', { name: 'Alpha filter card · 1000 · Fixture bank', exact: true }).check();
-  await menu.getByRole('checkbox', { name: 'Zulu filter card · 9000 · Fixture bank', exact: true }).check();
+  await menu.getByRole('checkbox', { name: `Fixture bank · ${tr('Cash')} · 1000`, exact: true }).check();
+  await menu.getByRole('checkbox', { name: `Fixture bank · ${tr('Cash')} · 9000`, exact: true }).check();
   await expect(page.locator('tbody tr')).toHaveCount(2);
   await expect(page.locator('.table-footer')).toContainText('$40.00');
   await page.keyboard.press('Escape');

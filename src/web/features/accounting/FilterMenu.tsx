@@ -2,7 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Filter } from 'lucide-react';
 
-export function FilterMenu({ label, children }: { label: string; children: React.ReactNode }) {
+export function FilterMenu({ label, children, popoverClassName = '' }: { label: string; children: React.ReactNode; popoverClassName?: string }) {
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const popover = useRef<HTMLDivElement>(null);
@@ -55,6 +55,6 @@ export function FilterMenu({ label, children }: { label: string; children: React
 
   return <div className="filter-menu">
     <button type="button" ref={trigger} aria-label={label} aria-expanded={open} aria-controls={open ? id : undefined} onClick={() => setOpen(!open)}><Filter size={13} /><ChevronDown size={10} /></button>
-    {open && createPortal(<div id={id} ref={popover} className="filter-popover">{children}</div>, document.body)}
+    {open && createPortal(<div id={id} ref={popover} className={`filter-popover ${popoverClassName}`}>{children}</div>, document.body)}
   </div>;
 }

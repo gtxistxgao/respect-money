@@ -21,6 +21,7 @@ import { FilterMenu } from './FilterMenu.js';
 import { resetTableFilters } from './filters.js';
 
 const emptyRows: LedgerRow[] = [];
+const accountTypeLabels: Record<Account['type'], string> = { checking: 'Checking', savings: 'Savings', credit: 'Credit card', investment: 'Investment account', cash: 'Cash', other: 'Other' };
 type Results = { rows: LedgerRow[]; total: number; page: number; pageSize: number; subtotalCents: number };
 export function Accounting() {
   const { options: categoryOptions } = useCategories();
@@ -36,8 +37,8 @@ export function Accounting() {
   const duplicates = useQuery({ queryKey: ['duplicates', month], queryFn: () => api<DuplicateGroup[]>(`/accounting/duplicates?month=${month}`) });
   const accountFilter = params.get('accounts') || '';
   const transactionAccountOptions = (accounts.data || []).filter(account => account.enabled && (!accountFilter || accountFilter.split(',').includes(account.id)))
-    .sort((a, b) => a.name.localeCompare(b.name) || a.mask.localeCompare(b.mask) || a.institution.localeCompare(b.institution) || a.id.localeCompare(b.id))
-    .map(account => [account.id, `${account.name}${account.mask ? ` · ${account.mask}` : ''} · ${account.institution}`] as const);
+    .map(account => [account.id, `${account.institution} · ${t(accountTypeLabels[account.type])}${account.mask ? ` · ${account.mask.slice(-4)}` : account.name !== account.institution ? ` · ${account.name}` : ''}`] as const)
+    .sort((a, b) => a[1].localeCompare(b[1], locale) || a[0].localeCompare(b[0]));
   const summary = useQuery({ queryKey: ['summary', month, accountFilter], queryFn: () => api<MonthSummary>(`/accounting/summary?${new URLSearchParams({ month, ...(accountFilter ? { accounts: accountFilter } : {}) })}`) });
   const availableSummary = summary.data && !(summary.data.incompleteAccounts.length && summary.data.transactionCount === 0) ? summary.data : undefined;
   const query = new URLSearchParams(params); query.set('month', month); query.set('mode', mode);
@@ -103,7 +104,7 @@ export function Accounting() {
       <div className="table-scroll"><table className="transaction-table"><thead><tr>
         <th><div className="column-header"><button onClick={() => sort('date')}>{t("Date")} <ArrowDownUp size={12} /></button><FilterMenu label={t("Filter dates")}><label>{t("Start date")}<input aria-label={t("Filter start date")} type="date" value={params.get('from') || ''} onChange={(e) => change('from', e.target.value)} /></label><label>{t("End date")}<input aria-label={t("Filter end date")} type="date" value={params.get('to') || ''} onChange={(e) => change('to', e.target.value)} /></label></FilterMenu></div></th>
         <th className="ledger-col-description"><div className="column-header"><button onClick={() => sort('description')}>{t("Description")} <ArrowDownUp size={12} /></button><FilterMenu label={t("Filter descriptions")}><label>{t("Description or notes")}<input aria-label={t("Filter description keywords")} placeholder={t("Search keywords")} value={params.get('q') || ''} onChange={(e) => change('q', e.target.value)} /></label></FilterMenu></div></th>
-        <th className="ledger-col-account" aria-sort={params.get('sort') === 'account' ? params.get('direction') === 'asc' ? 'ascending' : 'descending' : 'none'}><div className="column-header"><button onClick={() => sort('account')}>{t("Account")} <ArrowDownUp size={12} /></button><FilterMenu label={t("Filter transaction accounts")}><strong>{t("Account")}</strong><FilterChecks translateLabels={false} options={transactionAccountOptions} selected={params.get('transactionAccounts') || ''} onChange={value => change('transactionAccounts', value)} /></FilterMenu></div></th>
+        <th className="ledger-col-account" aria-sort={params.get('sort') === 'account' ? params.get('direction') === 'asc' ? 'ascending' : 'descending' : 'none'}><div className="column-header"><button onClick={() => sort('account')}>{t("Account")} <ArrowDownUp size={12} /></button><FilterMenu label={t("Filter transaction accounts")} popoverClassName="account-filter-popover"><strong>{t("Account")}</strong><FilterChecks singleColumn translateLabels={false} options={transactionAccountOptions} selected={params.get('transactionAccounts') || ''} onChange={value => change('transactionAccounts', value)} /></FilterMenu></div></th>
         <th className="align-right ledger-col-amount"><div className="column-header"><button onClick={() => sort('amount')}>{t("Amount")} <ArrowDownUp size={12} /></button><FilterMenu label={t("Filter amounts")}><label>{t("Minimum amount")}<input aria-label={t("Filter minimum amount")} type="number" min="0" step="0.01" value={params.get('min') || ''} onChange={(e) => change('min', e.target.value)} /></label><label>{t("Maximum amount")}<input aria-label={t("Filter maximum amount")} type="number" min="0" step="0.01" value={params.get('max') || ''} onChange={(e) => change('max', e.target.value)} /></label></FilterMenu></div></th>
         <th className="ledger-col-category"><div className="column-header"><button onClick={() => sort('category')}>{t("Category")} <ArrowDownUp size={12} /></button><FilterMenu label={t("Filter categories")}><strong>{t("Categories")}</strong><FilterChecks translateLabels={false} options={categoryOptions} selected={params.get('categories') || ''} onChange={(value) => change('categories', value)} /></FilterMenu></div></th>
         <th className="ledger-col-kind"><div className="column-header"><span>{t("Cash flow type")}</span></div></th>
@@ -119,7 +120,7 @@ export function Accounting() {
   </>;
 }
 
-function FilterChecks({ options, selected, onChange, translateLabels = true }: { translateLabels?: boolean; options: readonly (readonly [string, string])[]; selected: string; onChange: (value: string) => void }) {
+function FilterChecks({ options, selected, onChange, translateLabels = true, singleColumn = false }: { singleColumn?: boolean; translateLabels?: boolean; options: readonly (readonly [string, string])[]; selected: string; onChange: (value: string) => void }) {
   const values = selected ? selected.split(',') : [];
-  return <div className="filter-checks">{options.map(([id, label]) => <label key={id}><input type="checkbox" checked={values.includes(id)} onChange={(event) => onChange((event.target.checked ? [...values, id] : values.filter((value) => value !== id)).join(','))} />{translateLabels ? t(label) : label}</label>)}</div>;
+  return <div className={`filter-checks${singleColumn ? ' single-column' : ''}`}>{options.map(([id, label]) => <label key={id}><input type="checkbox" checked={values.includes(id)} onChange={(event) => onChange((event.target.checked ? [...values, id] : values.filter((value) => value !== id)).join(','))} /><span title={translateLabels ? t(label) : label}>{translateLabels ? t(label) : label}</span></label>)}</div>;
 }
